@@ -1,0 +1,14 @@
+from __future__ import absolute_import
+from .mobilenetv2 import mobilenetv2
+from .GigaPath import GigaPath
+
+def create_model(opt):
+    if opt['network_G']['which_model_G'] == 'mobilenetv2':
+        kwargs = {
+            'num_classes': opt['network_G']['out_nc'],
+            'width_mult': 1.}
+        return mobilenetv2(**kwargs)
+    elif opt['network_G']['which_model_G'] == 'gigapath':
+        return GigaPath(opt['network_G']['out_nc'])
+    else:
+        raise NotImplementedError('Model [{:s}] is not recognized.'.format(opt['network_G']['which_model_G']))

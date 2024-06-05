@@ -1,0 +1,4 @@
+pretrained/*
+RAW/PKG_Osteosarcoma_Tumor_Assessment/Images
+src/infer
+src/exp

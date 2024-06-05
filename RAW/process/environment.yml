@@ -1,0 +1,46 @@
+name: MRXS-to-PNG
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - blas=1.0
+  - ca-certificates
+  - certifi
+  - freetype
+  - intel-openmp
+  - jpeg
+  - libcxx
+  - libedit
+  - libffi
+  - libgfortran
+  - libpng
+  - libtiff
+  - mkl
+  - mkl-service
+  - mkl_fft
+  - mkl_random
+  - ncurses
+  - numpy
+  - numpy-base
+  - olefile
+  - openssl
+  - pandas
+  - pillow
+  - pip
+  - python
+  - python-dateutil
+  - python_abi
+  - pytz
+  - readline
+  - setuptools
+  - six
+  - sqlite
+  - termcolor
+  - tk
+  - wheel
+  - xz
+  - zlib
+  - zstd
+  - pip:
+    - openslide-python
+# prefix: /Users/linda/miniconda2/envs/MRXS-to-PNG
