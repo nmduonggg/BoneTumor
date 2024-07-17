@@ -18,7 +18,9 @@ from data import create_dataloader, create_dataset
 from model import create_model
 import utils.utils as utils
 import data.utils as data_utils
+import matplotlib.patches as mpatches
 
+os.environ['HF_TOKEN'] = "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"
 abspath = os.path.abspath(__file__)
 PIL.Image.MAX_IMAGE_PIXELS = None
 
@@ -35,7 +37,8 @@ opt = option.dict_to_nonedict(opt)
 os.environ['CUDA_VISIBLE_DEVICES'] = '%d' % opt['gpu_ids'][0]
 device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
 
-working_dir = os.path.join('.', 'infer', opt['name'])
+current_infer_img = os.path.basename(args.infer_path)[:-4]
+working_dir = os.path.join('.', 'infer', opt['name'], current_infer_img)
 os.makedirs(working_dir, exist_ok=True)
     
 model = create_model(opt)
@@ -74,7 +77,7 @@ def laplacian_score(image):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     laplac = cv2.Laplacian(gray, cv2.CV_16S, ksize=3)
     mask_img = cv2.convertScaleAbs(laplac)
-    return mask_img.mean()
+    return mask_img
 
 def index2color(idx, patch, color_map):
     
@@ -83,7 +86,12 @@ def index2color(idx, patch, color_map):
     color = color_map[idx]
     color_tensor = torch.ones_like(patch) * torch.tensor(color).reshape(1, -1, 1, 1)
     color_np = color_tensor.squeeze(0).permute(1,2,0).numpy() / 255.0
-    return color_np
+    
+    idx += 1 # [0, 1, 2, 3]
+    class_tensor = torch.ones_like(patch) * torch.tensor(idx).reshape(1, 1, 1, 1)
+    class_np = class_tensor.squeeze(0).permute(1,2,0).numpy() 
+    
+    return color_np, class_np
 
 def alpha_blending(im1, im2, alpha):
     out = cv2.addWeighted(im1, alpha , im2, 1-alpha, 0)
@@ -108,47 +116,88 @@ def infer():
         
     patches_dir = os.path.join(working_dir, "patches")
     os.makedirs(patches_dir, exist_ok=True)
-    preds_list = []
+    preds_list, class_list = [], []
     for i, patch in tqdm(enumerate(patches_list), total=len(patches_list)):
         
         patch = cv2.resize(patch, (infer_size, infer_size))
         
         ori_patch = copy.deepcopy(patch)
-        edge_score = laplacian_score(patch)
+        edge_score = laplacian_score(patch).mean()
         # patch = cv2.cvtColor(patch, cv2.COLOR_BGR2RGB)
         
         patch = data_utils.normalize_np(patch / 255.0).astype(np.float32)
         patch_tensor = torch.tensor(patch).permute(2,0,1)
         im = patch_tensor.unsqueeze(0).to(device)
         
-        if edge_score <= 10: # filter background
-            preds_list.append(
-                index2color(-1, im.cpu(), color_map))   # skip
+        if edge_score <= 0: # filter background
+            pred, class_ = index2color(-1, im.cpu(), color_map)
+            preds_list.append(pred)   # skip
+            class_list.append(class_)
             continue
         
-        plt.imsave(os.path.join(patches_dir, f'./patch_{i}.png'), ori_patch)
+        # plt.imsave(os.path.join(patches_dir, f'./patch_{i}.png'), ori_patch)
         
         with torch.no_grad():
             pred = model(im)
-        preds_list.append(
-            index2color(torch.argmax(pred.cpu().detach(), dim=-1), im.cpu(), color_map))
+        pred, class_ = index2color(torch.argmax(pred.cpu().detach(), dim=-1), im.cpu(), color_map)
+        preds_list.append(pred)
+        class_list.append(class_)
         
     kwargs['sr_list'] = preds_list
     prediction = (postprocess(**kwargs) * 255).astype(np.uint8)
+    kwargs['sr_list'] = class_list
+    class_prediction = (postprocess(**kwargs)).astype(np.uint8)
     
     # cut to align img and prediction
     img = img[:h, :w, :]
     blend_im = alpha_blending(
         img, prediction, 0.6)
     
-    img = cv2.resize(img, None, fx=0.02, fy=0.02)
-    prediction = cv2.resize(prediction, None, fx=0.02, fy=0.02)
-    blend_im = cv2.resize(blend_im, None, fx=0.02, fy=0.02)
+    del prediction  # free mem
     
-    plt.imsave(os.path.join(working_dir, 'out_giga.png'), prediction)
-    plt.imsave(os.path.join(working_dir, 'blend_giga.png'), blend_im)
+    binary_im = laplacian_score(img)
+    binary_im = (binary_im > 0).astype(np.float32)
+    binary_im = np.expand_dims(binary_im, axis=-1)
+    total_pixels = binary_im.sum()
+    
+    blend_im = (blend_im * binary_im).astype(np.uint8)
+    del binary_im   # free mem
+    
+    class_prediction = class_prediction.astype(np.uint8) * binary_im
+    class_im = [
+        (class_prediction==i).astype(int).sum() / 3 for i in range(1, 4)
+    ]
+    class_percent = [cl / total_pixels for cl in class_im]
+    
+    
+    fx = 1e-3
+    fy = 1e-3
+    
+    # binary_im = cv2.resize(binary_im, None, fx=fx, fy=fy)
+    
+    img = cv2.resize(img, None, fx=fx, fy=fy)
+    # prediction = cv2.resize(prediction, None, fx=fx, fy=fy)
+    blend_im = cv2.resize(blend_im, None, fx=fx, fy=fy)
+    
+    # plt.imsave(os.path.join(working_dir, 'out_giga.png'), prediction)
     plt.imsave(os.path.join(working_dir, 'original_img.png'), img)
+    # plt.imsave(os.path.join(working_dir, 'binary_img.png'), binary_im)
     
+    
+    # Final result
+    plt.figure(figsize=(16, 10))
+    plt.imshow(blend_im)
+    # create a patch (proxy artist) for every color 
+    labels = ['non-tumor', 'viable', 'non-viable']
+    patches = [ mpatches.Patch(color=np.array(color_map[i]) / 255.,
+                               label=f"{labels[i]} - ({round(class_percent[i], 2)})") for i in range(len(labels)) ]
+    # put those patched as legend-handles into the legend
+    plt.legend(handles=patches, bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0. )
+    plt.axis("off")
+    plt.savefig(os.path.join(working_dir, 'blend_giga.png'))
+    plt.cla()
+        
+    print("[RESULT] Each class non-tumor, viable, non-viable:", class_percent)
     
     return
     
