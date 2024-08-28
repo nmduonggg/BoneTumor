@@ -14,6 +14,7 @@ import warnings
 from scipy.special import softmax
 import matplotlib.pyplot as plt
 from scipy import stats
+from PIL import Image
 
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
@@ -251,11 +252,24 @@ def crop(img, crop_sz, step):
 
 def combine(sr_list, num_h, num_w, h, w, patch_size, step):
     index=0
-    sr_img = np.zeros((h, w, 3), 'float32')
+    sr_img = np.zeros((patch_size*num_h, patch_size*num_w, 3), 'float32')
+    print(h, w, num_h, num_w)
     for i in range(num_h):
         for j in range(num_w):
-            sr_img[i*step:i*step+patch_size,j*step:j*step+patch_size,:]+=sr_list[index]
+            sr_subim = sr_list[index]
+            if type(sr_subim)==str:
+                if 'txt' not in sr_subim:
+                    sr_subim = np.load(sr_subim) / 255.0 
+                else: continue
+                
+            bg = np.ones((patch_size, patch_size, 3), 'float32')
+            r, c, _ = sr_subim.shape
+            bg[:r, :c, :] = sr_subim
+            sr_subim = bg.astype(np.float32)
+            
+            sr_img[i*step: i*step+patch_size, j*step: j*step+patch_size,:]+=sr_subim
             index+=1
+            
     sr_img=sr_img.astype('float32')
 
     for j in range(1,num_w):
@@ -264,3 +278,22 @@ def combine(sr_list, num_h, num_w, h, w, patch_size, step):
     for i in range(1,num_h):
         sr_img[i*step:i*step+(patch_size-step),:,:]/=2
     return sr_img
+
+def clustering_pytorch(features, num_labels, niters=100):
+    # Initialize centroids randomly
+    # features = torch.cat(feature_list, dim=0)
+    centroids = features[torch.randperm(features.size(0))[:num_labels]]
+    
+    for _ in range(niters):
+        # Calculate distances from data points to centroids
+        distances = torch.cdist(features, centroids)
+    
+        # Assign each data point to the closest centroid
+        _, labels = torch.min(distances, dim=1)
+    
+        # Update centroids by taking the mean of data points assigned to each centroid
+        for i in range(num_labels):
+            if torch.sum(labels == i) > 0:
+                centroids[i] = torch.mean(features[labels == i], dim=0)
+                
+    return centroids, labels

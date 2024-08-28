@@ -15,8 +15,6 @@ from model import create_model
 import utils.utils as utils
 
 
-
-
 abspath = os.path.abspath(__file__)
 
 parser = argparse.ArgumentParser()

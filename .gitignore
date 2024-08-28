@@ -2,3 +2,7 @@ pretrained/*
 RAW/PKG_Osteosarcoma_Tumor_Assessment/Images
 src/infer
 src/exp
+MONAI/*
+RAW/REAL_WSIs
+RAW/*/*.jpg
+src/weights

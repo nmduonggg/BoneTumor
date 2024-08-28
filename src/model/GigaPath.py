@@ -7,12 +7,17 @@ import timm
 class GigaPath(nn.Module):
     def __init__(self, out_nc):
         super(GigaPath, self).__init__()
-        model = timm.create_model("hf_hub:prov-gigapath/prov-gigapath", pretrained=True, img_size=1024)
+        model = timm.create_model("hf_hub:prov-gigapath/prov-gigapath", pretrained=True, img_size=224)
         self.tile_encoder = model
         self.classifier = nn.Sequential(
             nn.Linear(1536, 512), nn.ReLU(),
             nn.Linear(512, out_nc)
         )
+        
+    def encode(self, x):
+        with torch.no_grad():
+            feature = self.tile_encoder(x)
+        return feature
         
     def forward(self, x):
         with torch.no_grad():

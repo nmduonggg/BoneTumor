@@ -122,11 +122,15 @@ class MobileNetV2(nn.Module):
 
         self._initialize_weights()
 
-    def forward(self, x):
+    def encode(self, x):
         x = self.features(x)
         x = self.conv(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
+        return x
+
+    def forward(self, x):
+        x = self.encode(x)
         x = self.classifier(x)
         return x
 
