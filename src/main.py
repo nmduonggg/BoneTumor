@@ -79,6 +79,10 @@ loss_func = nn.CrossEntropyLoss()
 
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, train_opt['epochs'], train_opt['eta_min'])
 
+for name, params in model.named_parameters():
+    if params.requires_grad:
+        print(name)
+
 def train():
     
     model.to(device)

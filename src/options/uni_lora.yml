@@ -1,10 +1,10 @@
-name: UNI
-gpu_ids: [1]
+name: UNI_lora
+gpu_ids: [0]
 job_dir: exp_segment
 token: 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
 
 network_G:
-  which_model_G: uni
+  which_model_G: uni_lora
   in_nc: 3
   out_nc: 7
 
@@ -18,7 +18,7 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data/labels
     height: 1024
     width: 1024
-    batch_size: 32
+    batch_size: 8
     balance: False
     augment: False
     n_workers: 2
@@ -32,7 +32,7 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data/labels
     height: 1024
     width: 1024
-    batch_size: 32
+    batch_size: 8
     n_workers: 2
 
   test:

@@ -7,6 +7,9 @@ import cv2
 import torch
 import json
 from torch.utils.data import Dataset
+from torchvision import transforms
+
+from PIL import Image
 
 from data import utils
 
@@ -46,26 +49,37 @@ class SegmentDataset(Dataset):
             [0, 0, 255]]
         self.tolerance = 50
         
+        self.transform = transforms.Compose(
+            [
+                transforms.Resize(224),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+            ]
+        )
+        
     def __len__(self):
         return len(self.indices)
     
     def __getitem__(self, index):
         
         item_idx = self.indices[index]
-        x = cv2.imread(os.path.join(self.image_dir, f"patch_{item_idx}.png"))
-        x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)
+        # x = cv2.imread(os.path.join(self.image_dir, f"patch_{item_idx}.png"))
+        # x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)
+        x = Image.open(os.path.join(self.image_dir, f"patch_{item_idx}.png")).convert("RGB")
         
         y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
         y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
         
         
-        x = x / 255.0
-        # x = utils.normalize_np(x)
-        x = torch.tensor(x).permute(2,0,1)
+        # x = x / 255.0
+        # # x = utils.normalize_np(x)
+        # x = torch.tensor(x).permute(2,0,1)
         # x = utils.imresize(x.unsqueeze(0), self.size).squeeze(0)
         
-        x = x.float()
+
+        
+        x = self.transform(x).float()
         y = torch.tensor(y).long() 
         
         return x, y
