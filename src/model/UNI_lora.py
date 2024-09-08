@@ -13,7 +13,7 @@ class UNI_lora(nn.Module):
     def __init__(self, out_nc):
         super(UNI_lora, self).__init__()
         
-        model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=1024,
+        model = timm.create_model("hf-hub:MahmoodLab/uni",
                                   pretrained=True, init_values=1e-5, dynamic_img_size=True)
         self.tile_encoder = model
         

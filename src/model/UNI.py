@@ -13,7 +13,7 @@ class UNI(nn.Module):
     def __init__(self, out_nc):
         super(UNI, self).__init__()
         
-        model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=1024,
+        model = timm.create_model("hf-hub:MahmoodLab/uni",
                                   pretrained=True, init_values=1e-5, dynamic_img_size=True)
         self.tile_encoder = model
         
