@@ -1,4 +1,4 @@
-name: UNI
+name: unet
 gpu_ids: [0]
 job_dir: exp_segment
 token: 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
@@ -18,7 +18,7 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data/labels
     height: 1024
     width: 1024
-    batch_size: 64
+    batch_size: 4
     balance: False
     augment: False
     n_workers: 2
@@ -32,7 +32,7 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data/labels
     height: 1024
     width: 1024
-    batch_size: 64
+    batch_size: 4
     n_workers: 2
 
   test:
@@ -51,11 +51,10 @@ datasets:
 path:
   # pretrain_model: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/pretrained/mobilenet/mobilenetv2_1.0-0c6065bc.pth
   # pretrain_model: /home/admin/duongnguyen/BoneTumor/src/weights/small_orig.pt
-  # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment/UNI/_best.pt
   pretrain_model: ~
 
 train:
-  lr_G: !!float 3e-4
+  lr_G: !!float 3e-5
   beta1: 0.9
   beta2: 0.99
   epochs: 20
@@ -70,4 +69,3 @@ logger:
 
 is_train: true
 is_test: false
-wandb: true

@@ -1,8 +1,13 @@
 pretrained/*
-RAW/PKG_Osteosarcoma_Tumor_Assessment/Images
+RAW/*
 src/infer
 src/exp
+src/wandb
 MONAI/*
 RAW/REAL_WSIs
 RAW/*/*.jpg
 src/weights
+wandb
+**/__pycache__
+src/exp_segment
+**/*.png

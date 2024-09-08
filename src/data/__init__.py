@@ -25,6 +25,8 @@ def create_dataset(dataset_opt):
     # datasets for image restoration
     if mode == 'base':
         from data.BaseDataset import BaseDataset as D
+    elif mode == 'segment':
+        from data.SegmentDataset import SegmentDataset as D
     else:
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(mode))
     dataset = D(dataset_opt)

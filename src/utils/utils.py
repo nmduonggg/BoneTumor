@@ -297,3 +297,56 @@ def clustering_pytorch(features, num_labels, niters=100):
                 centroids[i] = torch.mean(features[labels == i], dim=0)
                 
     return centroids, labels
+
+
+def compute_segmentation_metrics(preds, targets):
+    """
+    Calculate IoU, Precision, and Recall for multi-class segmentation.
+    
+    Args:
+        preds: predicted segmentation maps (B, C, H, W) -> usually softmax output or logits
+        targets: ground truth segmentation maps (B, H, W) -> contains class indices (not one-hot)
+        
+    Returns:
+        iou_per_class: IoU for each class
+        precision_per_class: Precision for each class
+        recall_per_class: Recall for each class
+    """
+    num_classes = preds.shape[1]
+    # Step 1: Convert logits or softmax to predicted class labels (B, H, W)
+    preds = torch.argmax(preds, dim=1)  # (B, H, W)
+    
+    # Initialize metrics for each class
+    iou_per_class = []
+    precision_per_class = []
+    recall_per_class = []
+    
+    # Step 2: Calculate metrics for each class
+    for class_idx in range(num_classes):
+        # True Positives, False Positives, and False Negatives for each class
+        TP = ((preds == class_idx) & (targets == class_idx)).sum(dim=(1, 2))  # (B,)
+        FP = ((preds == class_idx) & (targets != class_idx)).sum(dim=(1, 2))  # (B,)
+        FN = ((preds != class_idx) & (targets == class_idx)).sum(dim=(1, 2))  # (B,)
+        
+        # Avoid division by zero by adding a small epsilon
+        epsilon = 1e-7
+        
+        # IoU = TP / (TP + FP + FN)
+        iou = TP / (TP + FP + FN + epsilon)
+        iou_per_class.append(iou.mean().item())
+        
+        # Precision = TP / (TP + FP)
+        precision = TP / (TP + FP + epsilon)
+        precision_per_class.append(precision.mean().item())
+        
+        # Recall = TP / (TP + FN)
+        recall = TP / (TP + FN + epsilon)
+        recall_per_class.append(recall.mean().item())
+        
+    correct_pixels = (preds == targets).sum(dim=(1, 2))  # Total correctly predicted pixels per image
+    total_pixels = torch.tensor(targets.shape[-2] * targets.shape[-1], dtype=torch.float32)  # Total pixels in one image
+    accuracy = correct_pixels.float() / total_pixels.float()  # Pixel accuracy for each image in the batch
+    accuracy = accuracy.mean().item()  # Average accuracy across the batch
+    
+    return iou_per_class, precision_per_class, recall_per_class, accuracy
+    
