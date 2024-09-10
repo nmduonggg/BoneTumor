@@ -328,20 +328,25 @@ def compute_segmentation_metrics(preds, targets):
         FP = ((preds == class_idx) & (targets != class_idx)).sum(dim=(1, 2))  # (B,)
         FN = ((preds != class_idx) & (targets == class_idx)).sum(dim=(1, 2))  # (B,)
         
-        # Avoid division by zero by adding a small epsilon
-        epsilon = 1e-7
-        
-        # IoU = TP / (TP + FP + FN)
-        iou = TP / (TP + FP + FN + epsilon)
-        iou_per_class.append(iou.mean().item())
-        
-        # Precision = TP / (TP + FP)
-        precision = TP / (TP + FP + epsilon)
-        precision_per_class.append(precision.mean().item())
-        
-        # Recall = TP / (TP + FN)
-        recall = TP / (TP + FN + epsilon)
-        recall_per_class.append(recall.mean().item())
+        if (TP + FP + FN).sum() == 0:
+            iou_per_class.append(1.0)  # Perfect IoU
+            precision_per_class.append(1.0)  # Perfect Precision
+            recall_per_class.append(1.0)  # Perfect Recall
+        else:
+            # Avoid division by zero by adding a small epsilon
+            epsilon = 1e-7
+            
+            # IoU = TP / (TP + FP + FN)
+            iou = TP / (TP + FP + FN + epsilon)
+            iou_per_class.append(iou.mean().item())
+            
+            # Precision = TP / (TP + FP)
+            precision = TP / (TP + FP + epsilon)
+            precision_per_class.append(precision.mean().item())
+            
+            # Recall = TP / (TP + FN)
+            recall = TP / (TP + FN + epsilon)
+            recall_per_class.append(recall.mean().item())
         
     correct_pixels = (preds == targets).sum(dim=(1, 2))  # Total correctly predicted pixels per image
     total_pixels = torch.tensor(targets.shape[-2] * targets.shape[-1], dtype=torch.float32)  # Total pixels in one image

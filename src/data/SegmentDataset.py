@@ -6,12 +6,14 @@ import random
 import cv2
 import torch
 import json
+import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from torchvision import transforms
 
 from PIL import Image
 
 from data import utils
+import albumentations as A
 
 def apply_threshold_mapping(image, target_colors, tolerance):
     # Create masks for pixels that are closer to green or pink
@@ -51,10 +53,19 @@ class SegmentDataset(Dataset):
         
         self.transform = transforms.Compose(
             [
-                transforms.Resize(224),
+                # transforms.Resize(224),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
             ]
+        )
+        
+
+        self.augmentation = A.Compose([
+            A.VerticalFlip(p=0.5),
+            A.RandomRotate90(p=0.5),
+            A.Transpose(p=0.5),
+            A.RandomBrightnessContrast(p=0.8),
+            A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),]
         )
         
     def __len__(self):
@@ -65,19 +76,23 @@ class SegmentDataset(Dataset):
         item_idx = self.indices[index]
         # x = cv2.imread(os.path.join(self.image_dir, f"patch_{item_idx}.png"))
         # x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)
-        x = Image.open(os.path.join(self.image_dir, f"patch_{item_idx}.png")).convert("RGB")
+        x = np.array(
+            Image.open(os.path.join(self.image_dir, f"patch_{item_idx}.png")).convert("RGB"))
         
-        y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))
+        y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
+        
+        if self.opt['augment']:
+            augmented = self.augmentation(image=x, mask=y)
+            x = augmented['image']
+            y = augmented['mask']
+            
+            # p = np.random.random()
+            # if p > 0.8:
+            #     x = np.ones_like(x) * 255
+            #     y = np.ones_like(y) * 255
+        
         y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
-        
-        
-        # x = x / 255.0
-        # # x = utils.normalize_np(x)
-        # x = torch.tensor(x).permute(2,0,1)
-        # x = utils.imresize(x.unsqueeze(0), self.size).squeeze(0)
-        
-
         
         x = self.transform(x).float()
         y = torch.tensor(y).long() 

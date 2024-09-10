@@ -1,6 +1,6 @@
 name: UNI_lora
 gpu_ids: [0]
-job_dir: exp_segment_256_focal
+job_dir: exp_segment_256_heavy
 token: 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
 
 network_G:
@@ -18,7 +18,7 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 32
+    batch_size: 1024
     balance: False
     augment: true
     n_workers: 2
@@ -32,7 +32,7 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 512
+    batch_size: 2048
     augment: false
     n_workers: 2
 
@@ -45,7 +45,7 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 1
+    batch_size: 32
     balance: False
     augment: False
 
@@ -53,11 +53,11 @@ path:
   # pretrain_model: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/pretrained/mobilenet/mobilenetv2_1.0-0c6065bc.pth
   # pretrain_model: /home/admin/duongnguyen/BoneTumor/src/weights/small_orig.pt
   # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment/UNI/_best.pt
-  pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment_256_focal/UNI_lora/_best.pt
-  # pretrain_model: ~
+  # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment_256/UNI_lora/_best.pt
+  pretrain_model: ~
 
 train:
-  lr_G: !!float 5e-4
+  lr_G: !!float 3e-4
   beta1: 0.9
   beta2: 0.99
   epochs: 30

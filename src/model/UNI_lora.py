@@ -13,17 +13,24 @@ class UNI_lora(nn.Module):
     def __init__(self, out_nc):
         super(UNI_lora, self).__init__()
         
-        model = timm.create_model("hf-hub:MahmoodLab/uni",
+        model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
                                   pretrained=True, init_values=1e-5, dynamic_img_size=True)
         self.tile_encoder = model
         
+        # self.segment_head = nn.Sequential(
+        #     nn.Conv2d(4, 4*4*4, 3, 1, 1), nn.PixelShuffle(4), nn.ReLU(),    # 4x16x16 -> 4x64x64
+        #     nn.Conv2d(4, 4*4*4, 3, 1, 1), nn.PixelShuffle(4), nn.ReLU(),    # 4x64x64 -> 4x256x256
+        #     # nn.Conv2d(4, 16*4*4, 3, 1, 1), nn.PixelShuffle(4), nn.ReLU(),   
+        #     nn.Conv2d(4, out_nc, 3, 1, 1)
+        # )
         self.segment_head = nn.Sequential(
-            nn.Conv2d(4, 4*4*4, 3, 1, 1), nn.PixelShuffle(4), nn.ReLU(),
-            nn.Conv2d(4, 4*4*4, 3, 1, 1), nn.PixelShuffle(4), nn.ReLU(),
-            nn.Conv2d(4, 4*4*4, 3, 1, 1), nn.PixelShuffle(4), nn.ReLU(),
-            nn.Conv2d(4, out_nc, 3, 1, 1)
+            nn.Conv2d(4, 32, 3, 1, 1), nn.ReLU(),
+            nn.ConvTranspose2d(32, 32, 4, 4, 0), nn.ReLU(), nn.BatchNorm2d(32),
+            nn.Conv2d(32, 16, 3, 1, 1), nn.ReLU(),
+            nn.ConvTranspose2d(16, 16, 4, 4, 0), nn.ReLU(), nn.BatchNorm2d(16),
+            nn.Conv2d(16, out_nc, 3, 1, 1)
         )
-        self.apply_lora_to_vit(2, 4)
+        self.apply_lora_to_vit(16, 32)
 
     def encode(self, x):
         # Forward pass through the ViT model with LoRA
@@ -46,7 +53,7 @@ class UNI_lora(nn.Module):
         
         for name, module in self.tile_encoder.named_modules():
             if isinstance(module, nn.Linear) :
-                if 'qkv' in name:
+                if 'qkv' in name or 'proj' in name:
                     # Collect layers for replacement (store name and module)
                     layers_to_replace.append((name, module))
         

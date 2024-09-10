@@ -14,6 +14,7 @@ import wandb
 import options.options as option
 from data import create_dataloader, create_dataset
 from model import create_model
+from loss import FocalLoss
 import utils.utils as utils
 
 from huggingface_hub import login
@@ -58,7 +59,7 @@ if opt['path']['pretrain_model'] is not None:
     state_dict = torch.load(opt['path']['pretrain_model'], map_location='cpu')
     current_dict = model.state_dict()
     new_state_dict={k:v if v.size()==current_dict[k].size()  else  current_dict[k] for k,v in zip(current_dict.keys(), state_dict.values())}    # fix the size of checkpoint state dict
-    _strict=True
+    _strict=False
     if opt['name'] == 'ProvGigaPath':   # Not load trained weight but the quantized pretrained weight for FM encoder
         new_state_dict = {k: v for k, v in new_state_dict.items() if 'classifier' in k}
         _strict=False
@@ -71,11 +72,28 @@ train_opt = opt['train']
 if hasattr(model, "enable_lora_training"):
     model.enable_lora_training()
     
-optimizer = utils.create_optimizer(model.parameters(), train_opt)
+    optimizer = utils.create_optimizer(model.parameters(), train_opt)
+    
+
+    # lora_params = []
+    # other_params = []
+
+    # for name, param in model.named_parameters():
+    #     if "lora" in name:
+    #         lora_params.append(param)
+    #     else:
+    #         other_params.append(param)
+
+    # Define optimizer with different learning rates for different parameter groups
+    # optimizer = utils.create_optimizer([
+    #     {'params': lora_params, 'lr': 1e-5},
+    #     {'params': other_params, 'lr': 1e-3}
+    # ], train_opt)
 
 weight = torch.tensor([1.0, 1.0, 2.0])
 weight /= weight.sum()
 loss_func = nn.CrossEntropyLoss()
+# loss_func = FocalLoss()
 
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, train_opt['epochs'], train_opt['eta_min'])
 
@@ -91,12 +109,13 @@ def train():
     loss_tracker = utils.MetricTracker('Train Loss')
     acc_tracker = utils.MetricTracker('Train Accuracy')
     best_acc = 0.0
+    global_step = 0
     #### Start Training ####
     for epoch in range(train_opt['epochs']):
         train_metrics = {}  # reset
         
         # Validation #
-        if epoch % train_opt['val_freq']==0:    
+        if (epoch % train_opt['val_freq']==0):    
             print("Evaluating...")
             eval_loss, eval_acc, eval_metrics = evaluate()
             
@@ -105,7 +124,8 @@ def train():
                 eval_metrics[k] = np.mean(v / len(valid_set))
                 print(f"Eval {k}: {round(eval_metrics[k], 3)}", end= '|')
                 
-            if opt['wandb']: wandb.log({f"eval_{k}": v for k, v in eval_metrics.items()})
+            if opt['wandb']: 
+                wandb.log({f"eval_epoch_{k}": v for k, v in eval_metrics.items()})
             
             if eval_acc.avg > best_acc:
                 print(f"[WARN] Save best performance model at epoch {epoch}!")
@@ -136,6 +156,26 @@ def train():
             train_metrics['recall'] = train_metrics.get('recall', 0) + np.array(recall_)*batch_size
             train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_)*batch_size
             train_metrics['loss'] = train_metrics.get('loss', 0) + loss.detach().cpu().item()*batch_size
+            
+            global_step += 1
+            
+            # Validation #
+            if (global_step % train_opt['val_step_freq']==0):    
+                print("Evaluating...")
+                eval_loss, eval_acc, eval_metrics = evaluate()
+                
+                print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
+                for k, v in eval_metrics.items():
+                    eval_metrics[k] = np.mean(v / len(valid_set))
+                    print(f"Eval {k}: {round(eval_metrics[k], 3)}", end= '|')
+                    
+                if opt['wandb']: 
+                    wandb.log({f"eval_{k}": v for k, v in eval_metrics.items()})
+                
+                if eval_acc.avg > best_acc:
+                    print(f"[WARN] Save best performance model at epoch {epoch} - step {global_step}!")
+                    best_acc = eval_acc.avg
+                    torch.save(model.state_dict(), os.path.join(working_dir, '_best.pt'))
             
         print(f"[Train] Epoch {epoch}|{loss_tracker}|{acc_tracker}")
         for k, v in train_metrics.items():
@@ -181,6 +221,48 @@ def evaluate():
         
     return loss_tracker, acc_tracker, metrics
 
+
+def visualize(im, gt, pred, im_id):
+    
+    outdir = './analyze'
+    os.makedirs(outdir, exist_ok=True)
+    
+    # np_im = im.detach().cpu().squeeze(0).permute(1,2,0).numpy()
+    gt = gt.detach().cpu().squeeze(0).numpy()   # H, W
+    pred = torch.argmax(pred, dim=1)
+    pred = pred.detach().cpu().squeeze(0).numpy()   # CxHxW
+    output = np.zeros((gt.shape[0], gt.shape[1], 3))
+    outgt = np.zeros((gt.shape[0], gt.shape[1], 3))
+    
+    target_colors = [
+        [255, 255, 255],
+        [0, 128, 0],
+        [255, 143, 204],
+        [255, 0, 0],
+        [0, 0, 0],
+        [165, 42, 42],
+        [0, 0, 255]]
+    
+    for idx, color in enumerate(target_colors):
+        color = np.array(color)
+        
+        mask = pred == idx
+        output[mask] = color
+        # print(idx, mask.mean())
+        # print(output)
+        
+        mask = gt == idx
+        outgt[mask] = color
+        
+        # print(idx, mask.mean())
+        # print(idx, outgt)
+        # print('--')
+        
+    plt.imsave(os.path.join(outdir, f"{im_id}_pred"), output.astype(np.uint8))
+    plt.imsave(os.path.join(outdir, f"{im_id}_gt"), outgt.astype(np.uint8))
+        
+    return output
+
 def test():
     
     loss_tracker = utils.MetricTracker('Test Loss')
@@ -190,6 +272,7 @@ def test():
     labels, preds = list(), list()
     
     metrics = {}
+    cnt = 0
     for im, gt in tqdm(test_loader, total=len(test_loader)):
         batch_size = im.shape[0]
         im = im.to(device)
@@ -203,12 +286,17 @@ def test():
         iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
         acc_tracker.update(acc_, batch_size)
         
-        metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)
-        metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)
-        metrics['recall'] = metrics.get('recall', 0) + np.array(recall_)
+        metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)*batch_size
+        metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)*batch_size
+        metrics['recall'] = metrics.get('recall', 0) + np.array(recall_)*batch_size
+        metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)*batch_size
+        metrics['loss'] = metrics.get('loss', 0) + loss.detach().cpu().item()*batch_size
+        
+        visualize(im, gt, pred, cnt)
+        cnt += 1
         
     for k, v in metrics.items():
-        metrics[k] = np.mean(v / len(test_loader))
+        metrics[k] = v / len(test_set)
         print(f"{k}: {metrics[k]}", end= '|')
         
     print(f"{loss_tracker}|{acc_tracker}")
