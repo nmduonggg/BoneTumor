@@ -1,4 +1,4 @@
 python infer.py \
-    -opt options/gigapath.yml \
-    --weight_path '/home/admin/duongnguyen/BoneTumor/src/weights/small_orig.pt' \
-    --infer_dir '/home/admin/duongnguyen/BoneTumor/RAW/REAL_WSIs/A8/tiles'
+    -opt options/uni_lora_cls.yml \
+    --weight_path '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls/UNI_lora_cls/_best.pt' \
+    --infer_dir '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/RAW_DATA/images/Case_8'

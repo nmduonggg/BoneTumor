@@ -9,5 +9,5 @@ RAW/*/*.jpg
 src/weights
 wandb
 **/__pycache__
-src/exp_segment
+src/exp_cls_256_cls
 **/*.png

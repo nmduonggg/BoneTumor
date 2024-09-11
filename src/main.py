@@ -58,8 +58,9 @@ model = create_model(opt)
 if opt['path']['pretrain_model'] is not None:
     state_dict = torch.load(opt['path']['pretrain_model'], map_location='cpu')
     current_dict = model.state_dict()
-    new_state_dict={k:v if v.size()==current_dict[k].size()  else  current_dict[k] for k,v in zip(current_dict.keys(), state_dict.values())}    # fix the size of checkpoint state dict
-    _strict=False
+    new_state_dict = current_dict
+    # new_state_dict={k:v if v.size()==current_dict[k].size()  else  current_dict[k] for k,v in zip(current_dict.keys(), state_dict.values())}    # fix the size of checkpoint state dict
+    _strict=True
     if opt['name'] == 'ProvGigaPath':   # Not load trained weight but the quantized pretrained weight for FM encoder
         new_state_dict = {k: v for k, v in new_state_dict.items() if 'classifier' in k}
         _strict=False
@@ -93,7 +94,7 @@ if hasattr(model, "enable_lora_training"):
 weight = torch.tensor([1.0, 1.0, 2.0])
 weight /= weight.sum()
 loss_func = nn.CrossEntropyLoss()
-# loss_func = FocalLoss()
+regularization = FocalLoss()
 
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, train_opt['epochs'], train_opt['eta_min'])
 
@@ -141,14 +142,17 @@ def train():
             gt = gt.to(device)
             
             pred = model(im)
-            loss = loss_func(pred, gt)
+            loss = loss_func(pred, gt) + 0.5 * regularization(pred, gt)
             
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
             loss_tracker.update(loss.detach().cpu().item(), batch_size)
-            iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
+            if train_opt['mode']=='segment':
+                iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
+            elif train_opt['mode']=='classification':
+                iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
             acc_tracker.update(acc_, batch_size)
             
             train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_)*batch_size
@@ -210,7 +214,12 @@ def evaluate():
             
         loss = loss_func(pred, gt)
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
-        iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
+        
+        if train_opt['mode']=='segment':
+            iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
+        elif train_opt['mode']=='classification':
+            iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
+        else: assert(0), train_opt['mode']
         acc_tracker.update(acc_, batch_size)
         
         metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)*batch_size
@@ -283,7 +292,10 @@ def test():
             
         loss = loss_func(pred, gt)
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
-        iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
+        if train_opt['mode']=='segment':
+            iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
+        elif train_opt['mode']=='classification':
+            iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
         acc_tracker.update(acc_, batch_size)
         
         metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)*batch_size
@@ -292,7 +304,7 @@ def test():
         metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)*batch_size
         metrics['loss'] = metrics.get('loss', 0) + loss.detach().cpu().item()*batch_size
         
-        visualize(im, gt, pred, cnt)
+        # visualize(im, gt, pred, cnt)
         cnt += 1
         
     for k, v in metrics.items():

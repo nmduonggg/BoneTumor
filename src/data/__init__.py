@@ -27,6 +27,8 @@ def create_dataset(dataset_opt):
         from data.BaseDataset import BaseDataset as D
     elif mode == 'segment':
         from data.SegmentDataset import SegmentDataset as D
+    elif mode == 'classification':
+        from data.ClassificationDataset import ClassificationDataset as D
     else:
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(mode))
     dataset = D(dataset_opt)

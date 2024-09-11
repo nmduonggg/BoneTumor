@@ -16,29 +16,17 @@ from data import utils
 import albumentations as A
 
 def apply_threshold_mapping(image, target_colors, tolerance):
-    # Create masks for pixels that are closer to green or pink
-    # Initialize the output image with the original image
-    output = np.zeros_like(image)[:, :, 0] # 2D only
+    
     masks = []
     for idx, color in enumerate(target_colors):
         color = np.array(color)
         mask = np.all(np.abs(image - color) < tolerance, axis=-1)
         # output[mask] = color
-        output[mask] = idx
+        # output[mask] = idx
+        masks.append(mask.mean())
+    return np.argmax(np.array(masks))
 
-    return output
-
-def get_blank_mask(image, target_colors, tolerance=5):
-    # Create masks for pixels that are closer to green or pink
-    # Initialize the output image with the original image
-    
-    color = [255, 255, 255]
-    color = np.array(color)
-    mask = np.all(np.abs(image - color) < tolerance, axis=-1)
-
-    return mask
-
-class SegmentDataset(Dataset):
+class ClassificationDataset(Dataset):
     def __init__(self, opt):
         
         self.image_dir = opt['image_dir']
@@ -52,13 +40,13 @@ class SegmentDataset(Dataset):
             self.indices = json.load(f)[opt['type']]
             
         self.target_colors = [
-            [255, 255, 255],
-            [0, 128, 0],
-            [255, 143, 204],
-            [255, 0, 0],
-            [0, 0, 0],
-            [165, 42, 42],
-            [0, 0, 255]]
+            [255, 255, 255],    # background
+            [0, 128, 0],    # Viable tumor
+            [255, 143, 204],    # Necrosis
+            [255, 0, 0],    # Fibrosis/Hyalination
+            [0, 0, 0],  # Hemorrhage/ Cystic change
+            [165, 42, 42],  # Inflammatory
+            [0, 0, 255]]    # Non-tumor tissue
         self.tolerance = 50
         
         self.transform = transforms.Compose(
@@ -93,14 +81,16 @@ class SegmentDataset(Dataset):
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
         
         if self.opt['augment']:
-            augmented = self.augmentation(image=x, mask=y)
-            x = augmented['image']
-            y = augmented['mask']
+            # augmented = self.augmentation(image=x, mask=y)
+            # x = augmented['image']
+            # y = augmented['mask']
             
             # p = np.random.random()
             # if p > 0.8:
             #     x = np.ones_like(x) * 255
             #     y = np.ones_like(y) * 255
+            
+            x = self.augmentation(image=x)['image']
         
         y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
         
