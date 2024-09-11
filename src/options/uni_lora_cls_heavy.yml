@@ -1,10 +1,10 @@
-name: UNI_lora
+name: UNI_lora_cls
 gpu_ids: [0]
-job_dir: exp_segment_256_heavy
+job_dir: exp_cls_256_cls
 token: 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
 
 network_G:
-  which_model_G: uni_lora
+  which_model_G: uni_lora_cls
   in_nc: 3
   out_nc: 7
 
@@ -12,13 +12,13 @@ datasets:
   train:
     type: train
     name: Osteosarcoma
-    mode: segment
+    mode: classification
     image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256.json
+    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class.json
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 1024
+    batch_size: 256
     balance: False
     augment: true
     n_workers: 2
@@ -26,26 +26,26 @@ datasets:
   valid:
     type: valid
     name: Osteosarcoma
-    mode: segment
+    mode: classification
     image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256.json
+    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class.json
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 2048
+    batch_size: 1024
     augment: false
     n_workers: 2
 
   test:
     type: test
     name: Osteosarcoma
-    mode: segment
+    mode: classification
     image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256.json
+    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class.json
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 32
+    batch_size: 256
     balance: False
     augment: False
 
@@ -53,11 +53,11 @@ path:
   # pretrain_model: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/pretrained/mobilenet/mobilenetv2_1.0-0c6065bc.pth
   # pretrain_model: /home/admin/duongnguyen/BoneTumor/src/weights/small_orig.pt
   # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment/UNI/_best.pt
-  # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment_256/UNI_lora/_best.pt
+  # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls/UNI_lora_cls/_best.pt
   pretrain_model: ~
 
 train:
-  lr_G: !!float 3e-4
+  lr_G: !!float 5e-4
   beta1: 0.9
   beta2: 0.99
   epochs: 30
@@ -66,6 +66,8 @@ train:
   manual_seed: 2000
   val_freq: 1
   val_step_freq: 1000
+
+  mode: classification
 
 logger:
   print_freq: 20000
