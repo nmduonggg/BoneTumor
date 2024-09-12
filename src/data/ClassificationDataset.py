@@ -79,6 +79,10 @@ class ClassificationDataset(Dataset):
         
         y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
+        y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
+        
+        # if abs(np.mean(x) - 255) < 20:
+        #     y = 0
         
         if self.opt['augment']:
             # augmented = self.augmentation(image=x, mask=y)
@@ -89,10 +93,8 @@ class ClassificationDataset(Dataset):
             # if p > 0.8:
             #     x = np.ones_like(x) * 255
             #     y = np.ones_like(y) * 255
-            
-            x = self.augmentation(image=x)['image']
-        
-        y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
+            if int(y) not in [0, 6]:
+                x = self.augmentation(image=x)['image']
         
         x = self.transform(x).float()
         y = torch.tensor(y).long() 

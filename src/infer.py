@@ -82,11 +82,11 @@ def prepare(infer_path):
     global crop_sz, step
     
     # img = Image.open(infer_path).convert("RGB")
-    img = cv2.imread(infer_path)
+    img = cv2.imread(infer_path)[:, :, :3]
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     # img = np.array(img)
     
-    return utils.crop(img, crop_sz, step)
+    return [img, utils.crop(img, crop_sz, step)]
     
 def postprocess(**kwargs):
     return utils.combine(**kwargs)
@@ -105,11 +105,11 @@ def index2color(idx, patch, color_map):
     color_tensor = torch.ones_like(patch) * torch.tensor(color).reshape(1, -1, 1, 1)
     color_np = color_tensor.squeeze(0).permute(1,2,0).numpy() / 255.0
     
-    idx += 1 # [0, 1, 2, 3]
+    # idx += 1 # [0, 1, 2, 3]
     class_tensor = torch.ones_like(patch) * torch.tensor(idx).reshape(1, 1, 1, 1)
     class_np = class_tensor.squeeze(0).permute(1,2,0).numpy() 
     
-    return color_np, class_np
+    return color_np, idx
 
 def alpha_blending(im1, im2, alpha):
     out = cv2.addWeighted(im1, alpha , im2, 1-alpha, 0)
@@ -125,7 +125,7 @@ def infer(infer_path):
     model.to(device)
     model.eval()
     
-    preprocess_elems = prepare(infer_path)
+    img, preprocess_elems = prepare(infer_path)
     patches_list, num_h, num_w, h, w = preprocess_elems
     kwargs = {
         'sr_list': patches_list,
@@ -135,11 +135,16 @@ def infer(infer_path):
         'patch_size': crop_sz, 
         'step': step
     }
-    img = (postprocess(**kwargs) * 255).astype(np.uint8)
+    # img = postprocess(**kwargs)
+    img = cv2.resize(img, None, fx=fx, fy=fy)
+    print(img.max())
+    plt.imsave(os.path.join(working_dir, infer_name), img) 
+    print("Save original image done") 
         
     # patches_dir = os.path.join(working_dir, "patches")
     # os.makedirs(patches_dir, exist_ok=True)
     preds_list, class_list = [], []
+    class_counts = [0 for _ in range(7)]
     for i, patch in tqdm(enumerate(patches_list), total=len(patches_list)):
         
         bg = np.ones((crop_sz, crop_sz, 3), 'float32') * 255
@@ -158,7 +163,7 @@ def infer(infer_path):
         im = patch_tensor.unsqueeze(0).to(device)
         
         if edge_score <= 5: # filter background
-            pred, class_ = index2color(-1, im.cpu(), color_map)
+            pred, class_ = index2color(0, im.cpu(), color_map)
             preds_list.append(pred)   # skip
             class_list.append(class_)
             continue
@@ -168,20 +173,25 @@ def infer(infer_path):
         pred, class_ = index2color(torch.argmax(pred.cpu().detach(), dim=-1), im.cpu(), color_map)
         preds_list.append(pred)
         class_list.append(class_)
+        try:
+            class_counts[class_] += 1
+        except:
+            print(class_)
     
     kwargs['sr_list'] = preds_list
     prediction = (postprocess(**kwargs) * 255).astype(np.uint8)
     kwargs['sr_list'] = class_list
-    class_prediction = (postprocess(**kwargs)).astype(np.uint8)
+    # class_prediction = (postprocess(**kwargs)).astype(np.uint8)
     
-    img = cv2.resize(img, None, fx=fx, fy=fy)
-    prediction = cv2.resize(prediction, None, fx=fx, fy=fy)
+    prediction = cv2.resize(prediction, (img.shape[1], img.shape[0]), fx=fx, fy=fy)
     
     
     # cut to align img and prediction
     # img = img[:h, :w, :]
     blend_im = alpha_blending(
         img, prediction, 0.6)
+    
+    plt.imsave(os.path.join(working_dir, f"{infer_name.split('.')[0]}_pred.png"), prediction) 
     
     del prediction  # free mem
     
@@ -194,40 +204,50 @@ def infer(infer_path):
     # class_prediction = (class_prediction * binary_im)
     
     # class_prediction = class_prediction.astype(np.uint8) * binary_im
-    class_percent = [
-        (class_prediction==i).astype(int).mean()  for i in range(7)
-    ]
+    # class_list = np.array(class_list)
+    # class_percent = [
+    #     (class_list==i).astype(int).mean()  for i in range(7)
+    # ]
     # class_percent = [cl / total_pixels for cl in class_im]
+    class_counts = np.array(class_counts)
+    class_percent = class_counts / np.sum(class_counts)
+    print(class_percent)
     
     # del binary_im   # free mem
-    del class_prediction
+    # del class_prediction
     
     # binary_im = cv2.resize(binary_im, None, fx=fx, fy=fy)
     
     # prediction = cv2.resize(prediction, None, fx=fx, fy=fy)
-    plt.imsave(os.path.join(working_dir, infer_name), img)    
+  
     
-    blend_im = cv2.resize(blend_im, None, fx=fx, fy=fy)
+    # blend_im = cv2.resize(blend_im, None, fx=fx, fy=fy)
     
     # plt.imsave(os.path.join(working_dir, 'out_giga.png'), prediction)
     # plt.imsave(os.path.join(working_dir, 'binary_img.png'), binary_im)
     
     # Final result
-    plt.figure(figsize=(16, 10))
-    plt.imshow(blend_im)
-    # create a patch (proxy artist) for every color 
-    labels = ['background', 'viable', 'necrosis', 'fibrosis/hyalination', 'inflammatory', 'non-tumor']
-    patches = [ mpatches.Patch(color=np.array(color_map[i]) / 255.,
-                               label=f"{labels[i]} - ({round(class_percent[i], 2)})") for i in range(len(labels)) ]
-    # put those patched as legend-handles into the legend
-    plt.legend(handles=patches, bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0. )
-    plt.axis("off")
-    plt.savefig(os.path.join(working_dir, f'{infer_name.split(".")[0]}_blend.png'))
-    plt.cla()
+    # plt.figure(figsize=(16, 10))
+    # plt.imshow(blend_im)
+    # # create a patch (proxy artist) for every color 
+    labels = ['background', 'viable', 'necrosis', 'fibrosis/hyalination', 'hemorrhage/cystic-change', 'inflammatory', 'non-tumor']
+    # patches = [ mpatches.Patch(color=np.array(color_map[i]) / 255.,
+    #                            label=f"{labels[i]} - ({round(class_percent[i], 2)})") for i in range(len(labels)) ]
+    # # put those patched as legend-handles into the legend
+    # plt.legend(handles=patches, bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0. )
+    # plt.axis("off")
+    # plt.savefig(os.path.join(working_dir, f'{infer_name.split(".")[0]}_blend.png'))
+    # plt.cla()
+    
+    plt.imsave(os.path.join(working_dir, f"{infer_name.split('.')[0]}_blend.png"),
+               blend_im.astype(np.uint8))
+    print("Save prediction done")
         
     print("[RESULT]")
     for i in range(7):
         print(f"{labels[i]} - {round(class_percent[i], 4)}")
+        
+    print("-"*20)
     
     return
 

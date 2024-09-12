@@ -5,7 +5,8 @@ class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2, ignore_index=-100, reduction='mean'):
         super().__init__()
         # use standard CE loss without reducion as basis
-        self.CE = nn.CrossEntropyLoss(reduction='none', ignore_index=ignore_index)
+        weight = torch.tensor([0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 0.5])
+        self.CE = nn.CrossEntropyLoss(reduction='none', ignore_index=ignore_index, weight=weight)
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
