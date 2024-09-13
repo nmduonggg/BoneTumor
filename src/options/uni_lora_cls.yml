@@ -1,5 +1,5 @@
 name: UNI_lora_cls
-gpu_ids: [0]
+gpu_ids: [1]
 job_dir: exp_cls_256_cls_rm_confused_case
 token: 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
 
@@ -45,16 +45,17 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 1
+    batch_size: 256
     balance: False
     augment: False
+    n_workers: 2
 
 path:
   # pretrain_model: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/pretrained/mobilenet/mobilenetv2_1.0-0c6065bc.pth
   # pretrain_model: /home/admin/duongnguyen/BoneTumor/src/weights/small_orig.pt
   # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment/UNI/_best.pt
-  # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls/UNI_lora_cls/_best_bkup.pt
-  pretrain_model: ~
+  pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls_rm_confused_case/UNI_lora_cls/_best.pt
+  # pretrain_model: ~
 
 train:
   lr_G: !!float 5e-4
@@ -73,6 +74,6 @@ logger:
   print_freq: 20000
   save_checkpoint_freq: !!float 20000
 
-is_train: true
-is_test: false
+is_train: false
+is_test: true
 wandb: false

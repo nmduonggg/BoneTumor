@@ -76,24 +76,8 @@ if hasattr(model, "enable_lora_training"):
     model.enable_lora_training()
     
 optimizer = utils.create_optimizer(model.parameters(), train_opt)
-    
 
-    # lora_params = []
-    # other_params = []
-
-    # for name, param in model.named_parameters():
-    #     if "lora" in name:
-    #         lora_params.append(param)
-    #     else:
-    #         other_params.append(param)
-
-    # Define optimizer with different learning rates for different parameter groups
-    # optimizer = utils.create_optimizer([
-    #     {'params': lora_params, 'lr': 1e-5},
-    #     {'params': other_params, 'lr': 1e-3}
-    # ], train_opt)
-
-weight = torch.tensor([1.0, 0.2, 0.5, 0.5, 1.0, 1.0, 0.2]).to(device)
+weight = torch.tensor([0.2, 0.5, 1.0, 1.0, 1.0, 1.0, 0.2]).to(device)
 weight = weight / torch.sum(weight)
 loss_func = nn.CrossEntropyLoss(weight=weight)
 # loss_func = FocalLoss().to(device)
@@ -269,6 +253,8 @@ def evaluate():
         
     # print(utils.compute_all_metrics(pred, gt))
     
+    model.train()
+    
     return loss_tracker, acc_tracker, metrics
 
 
@@ -279,6 +265,7 @@ def visualize(im, gt, pred, im_id):
     
     np_im = im.detach().cpu().squeeze(0).permute(1,2,0).numpy()
     np_im = data_utils.denormalize_np(np_im)
+    print(np.mean(np_im)*255)
     
     gt = gt.detach().cpu().squeeze(0).numpy()   # H, W
     pred = torch.argmax(pred, dim=1)
@@ -324,7 +311,7 @@ def test():
     
     all_preds = []
     all_gts = []
-    
+    cnt = 0
     for im, gt in tqdm(test_loader, total=len(test_loader)):
         batch_size = im.shape[0]
         im = im.to(device)
@@ -351,8 +338,12 @@ def test():
         all_preds.append(pred.clone().detach().cpu())
         all_gts.append(gt.clone().detach().cpu())
         
-        # visualize(im, gt, pred, cnt)
-        # print(torch.argmax(pred, dim=1), gt)
+        # idx_pred = torch.argmax(pred.cpu().detach(), dim=1).item()
+        # if gt.item() != idx_pred:
+        # # if gt.item()==3:
+        
+        #     visualize(im, gt, pred, cnt)
+        #     print(idx_pred, gt)
         cnt += 1
     
     pred = torch.cat(all_preds, dim=0)
@@ -364,8 +355,8 @@ def test():
     metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
         
     for k, v in metrics.items():
-        metrics[k] = np.mean(v)
-        print(f"{k}: {round(metrics[k], 3)}", end= '|')
+        # metrics[k] = np.mean(v)
+        print(f"{k}: {metrics[k]}")
         
     print(f"{loss_tracker}|{acc_tracker}")
     

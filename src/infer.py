@@ -14,6 +14,7 @@ import argparse
 from tqdm import tqdm
 from PIL import Image
 
+from torchvision import transforms
 import options.options as option
 from data import create_dataloader, create_dataset
 from model import create_model
@@ -158,12 +159,22 @@ def infer(infer_path):
         # patch = cv2.cvtColor(patch, cv2.COLOR_BGR2RGB)
         
         # normalize
-        patch = data_utils.normalize_np(patch / 255.0).astype(np.float32)
-        patch_tensor = torch.tensor(patch).permute(2,0,1)
-        im = patch_tensor.unsqueeze(0).to(device)
+        # patch = data_utils.normalize_np(patch / 255.0).astype(np.float32)
+        # patch_tensor = torch.tensor(patch).permute(2,0,1)
+        # im = patch_tensor.unsqueeze(0).to(device)
+        
+        transform = transforms.Compose(
+                [
+                    # transforms.Resize(224),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+                ]
+            )
+        im = transform(patch).float()
+        print(im.shape)
         
         if edge_score <= 5: # filter background
-            pred, class_ = index2color(0, im.cpu(), color_map)
+            pred, class_ = index2color(0, im.squeeze(0).cpu(), color_map)
             preds_list.append(pred)   # skip
             class_list.append(class_)
             continue
@@ -253,6 +264,7 @@ def infer(infer_path):
 
 
 for infer_path in os.listdir(args.infer_dir):
+    # if "S2" not in infer_path: continue
     infer_path = os.path.join(args.infer_dir, infer_path)
     print("Process: ", infer_path)
     infer(infer_path)

@@ -93,8 +93,8 @@ class ClassificationDataset(Dataset):
             # if p > 0.8:
             #     x = np.ones_like(x) * 255
             #     y = np.ones_like(y) * 255
-            if int(y) not in [0, 6]:
-                x = self.augmentation(image=x)['image']
+            # if int(y) not in [0, 6]:
+            x = self.augmentation(image=x)['image']
         
         x = self.transform(x).float()
         y = torch.tensor(y).long() 
