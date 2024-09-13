@@ -79,6 +79,21 @@ color_map = [
     [165, 42, 42],  # Inflammatory
     [0, 0, 255]]    # Non-tumor tissue
 
+def apply_threshold_mapping(image):
+    # Create masks for pixels that are closer to green or pink
+    # Initialize the output image with the original image
+    tolerance = 50
+    
+    output = np.ones_like(image)*255 # 2D only
+    masks = []
+    for idx, color in enumerate(color_map):
+        color = np.array(color)
+        mask = np.all(np.abs(image - color) < tolerance, axis=-1)
+        output[mask] = color
+        # output[mask] = idx
+
+    return output
+
 def prepare(infer_path):
     global crop_sz, step
     
@@ -120,6 +135,9 @@ def infer(infer_path):
     global color_map
     infer_name = os.path.basename(infer_path)
     
+    with open(os.path.join(working_dir, "result.txt"), "a") as f:
+        f.write(f"{infer_name}\n")
+    
     fx = 5e-2
     fy = 5e-2
     
@@ -152,9 +170,8 @@ def infer(infer_path):
         r, c, _ = patch.shape
         bg[:r, :c, :] = patch
         patch = bg.astype(np.uint8)
-        # patch = cv2.resize(patch, (infer_size, infer_size))
         
-        ori_patch = copy.deepcopy(patch)
+        # ori_patch = copy.deepcopy(patch)
         edge_score = laplacian_score(patch).mean()
         # patch = cv2.cvtColor(patch, cv2.COLOR_BGR2RGB)
         
@@ -178,6 +195,7 @@ def infer(infer_path):
             class_list.append(class_)
             continue
         
+        im = im.to(device)
         with torch.no_grad():
             pred = model(im)
         pred, class_ = index2color(torch.argmax(pred.cpu().detach(), dim=-1), im.cpu(), color_map)
@@ -205,50 +223,12 @@ def infer(infer_path):
     
     del prediction  # free mem
     
-    # binary_im = laplacian_score(img)
-    # binary_im = (binary_im > 0).astype(np.float32)
-    # binary_im = np.expand_dims(binary_im, axis=-1)
-    # total_pixels = binary_im.sum()
-    
-    # blend_im = (blend_im * binary_im).astype(np.uint8)
-    # class_prediction = (class_prediction * binary_im)
-    
-    # class_prediction = class_prediction.astype(np.uint8) * binary_im
-    # class_list = np.array(class_list)
-    # class_percent = [
-    #     (class_list==i).astype(int).mean()  for i in range(7)
-    # ]
-    # class_percent = [cl / total_pixels for cl in class_im]
-    class_counts = np.array(class_counts)
-    class_percent = class_counts / np.sum(class_counts)
+    # class_counts = np.array(class_counts)
+    class_percent = np.array(class_counts) / np.sum(np.array(class_counts))
     print(class_percent)
     
-    # del binary_im   # free mem
-    # del class_prediction
-    
-    # binary_im = cv2.resize(binary_im, None, fx=fx, fy=fy)
-    
-    # prediction = cv2.resize(prediction, None, fx=fx, fy=fy)
-  
-    
-    # blend_im = cv2.resize(blend_im, None, fx=fx, fy=fy)
-    
-    # plt.imsave(os.path.join(working_dir, 'out_giga.png'), prediction)
-    # plt.imsave(os.path.join(working_dir, 'binary_img.png'), binary_im)
-    
-    # Final result
-    # plt.figure(figsize=(16, 10))
-    # plt.imshow(blend_im)
-    # # create a patch (proxy artist) for every color 
     labels = ['background', 'viable', 'necrosis', 'fibrosis/hyalination', 'hemorrhage/cystic-change', 'inflammatory', 'non-tumor']
-    # patches = [ mpatches.Patch(color=np.array(color_map[i]) / 255.,
-    #                            label=f"{labels[i]} - ({round(class_percent[i], 2)})") for i in range(len(labels)) ]
-    # # put those patched as legend-handles into the legend
-    # plt.legend(handles=patches, bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0. )
-    # plt.axis("off")
-    # plt.savefig(os.path.join(working_dir, f'{infer_name.split(".")[0]}_blend.png'))
-    # plt.cla()
-    
+
     plt.imsave(os.path.join(working_dir, f"{infer_name.split('.')[0]}_blend.png"),
                blend_im.astype(np.uint8))
     print("Save prediction done")
@@ -256,21 +236,41 @@ def infer(infer_path):
     print("[RESULT]")
     for i in range(7):
         print(f"{labels[i]} - {round(class_percent[i], 4)}")
+        with open(os.path.join(working_dir, "result.txt"), "a") as f:
+            f.write(f"{labels[i]} - {round(class_percent[i], 4)}\n")
+    with open(os.path.join(working_dir, "result.txt"), "a") as f:
+        f.write(f"-------------\n")
         
     print("-"*20)
     
-    return
+    return class_counts
 
 
-for infer_path in os.listdir(args.infer_dir):
-    # if "S2" not in infer_path: continue
-    infer_path = os.path.join(args.infer_dir, infer_path)
-    print("Process: ", infer_path)
-    infer(infer_path)
+if __name__=='__main__':
     
-    
+    case_patch_counts = [0 for _ in range(len(color_map))]
+    with open(os.path.join(working_dir, "result.txt"), "w") as f:
+        f.write(f"======={args.infer_dir}=======\n")
+
+    for infer_path in os.listdir(args.infer_dir):
+        
+        # start
+        infer_path = os.path.join(args.infer_dir, infer_path)
+            
+        print("Process: ", infer_path)
+        slide_patch_counts = infer(infer_path)
+        print(slide_patch_counts)
+        
+        for i, class_count in enumerate(slide_patch_counts):
+            case_patch_counts[i] += slide_patch_counts[i]
+            
+    case_patch_percents = np.array(case_patch_counts) / np.sum(np.array(case_patch_counts))
+    with open(os.path.join(working_dir, "result.txt"), "a") as f:
+        f.write(f"{case_patch_percents}")
         
         
-        
-        
-        
+            
+            
+            
+            
+            

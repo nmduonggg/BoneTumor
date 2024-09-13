@@ -249,23 +249,18 @@ def crop(img, crop_sz, step):
     w=y + crop_sz
     return lr_list, num_h, num_w, h, w
 
-
-def combine(sr_list, num_h, num_w, h, w, patch_size, step):
+def combine(sr_list, num_h, num_w, h, w, patch_size, step, channel=3):
     index=0
-    sr_img = np.zeros((patch_size*num_h, patch_size*num_w, 3), 'float32')
-    print(h, w, num_h, num_w)
+    sr_img = np.zeros((patch_size*num_h, patch_size*num_w, channel), 'float32')
+    print(h, w, num_h, num_w, channel)
     for i in range(num_h):
         for j in range(num_w):
             sr_subim = sr_list[index]
-            if type(sr_subim)==str:
-                if 'txt' not in sr_subim:
-                    sr_subim = np.load(sr_subim) / 255.0 
-                else: continue
                 
-            bg = np.ones((patch_size, patch_size, 3), 'float32')
-            r, c, _ = sr_subim.shape
-            bg[:r, :c, :] = sr_subim
-            sr_subim = bg.astype(np.float32)
+            # bg = np.ones((patch_size, patch_size, channel), 'float32')
+            # r, c, _ = sr_subim.shape
+            # bg[:r, :c, :] = sr_subim
+            # sr_subim = bg.astype(np.float32)
             
             sr_img[i*step: i*step+patch_size, j*step: j*step+patch_size,:]+=sr_subim
             index+=1

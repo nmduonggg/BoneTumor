@@ -41,11 +41,11 @@ datasets:
     name: Osteosarcoma
     mode: classification
     image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_rm_confused_case.json
+    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_rm_confused_case_with9.json
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 256
+    batch_size: 128
     balance: False
     augment: False
     n_workers: 2
@@ -54,11 +54,11 @@ path:
   # pretrain_model: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/pretrained/mobilenet/mobilenetv2_1.0-0c6065bc.pth
   # pretrain_model: /home/admin/duongnguyen/BoneTumor/src/weights/small_orig.pt
   # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment/UNI/_best.pt
-  pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls_rm_confused_case/UNI_lora_cls/_best.pt
+  pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls_rm_confused_case_with9/UNI_lora_cls/_best.pt
   # pretrain_model: ~
 
 train:
-  lr_G: !!float 5e-4
+  lr_G: !!float 3e-4
   beta1: 0.9
   beta2: 0.99
   epochs: 30
