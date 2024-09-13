@@ -170,7 +170,8 @@ def infer(infer_path):
                     transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 ]
             )
-        im = transform(patch).float().unsqueeze(0)
+        im = transform(patch).float().to(device)
+        print(im.shape)
         
         if edge_score <= 5: # filter background
             pred, class_ = index2color(0, im.cpu(), color_map)
@@ -180,9 +181,8 @@ def infer(infer_path):
         
         with torch.no_grad():
             pred = model(im)
-        pred, class_ = index2color(torch.argmax(pred.cpu().detach(), dim=-1), im.cpu(), color_map)
         preds_list.append(pred)
-        class_list.append(class_)
+        
         try:
             class_counts[class_] += 1
         except:
