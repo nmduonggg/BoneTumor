@@ -294,11 +294,11 @@ def huvos_classify(huvos_ratio):
 if __name__=='__main__':
     
     
-    done_cases = [f"Case_{n}" for n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+    done_cases = [f"Case_{n}" for n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
     
     for case in os.listdir(args.labels_dir):
         if case not in done_cases: continue
-        if case != 'Case_1': continue
+        # if case != 'Case_1': continue
         
         label_dir = os.path.join(args.labels_dir, case)
         image_dir = os.path.join(args.images_dir, case)
