@@ -11,4 +11,5 @@ wandb
 **/__pycache__
 src/exp_cls_256_cls
 src/exp_cls_256_cls_rm_confused_case
+src/exp_cls_256_cls_rm_confused_case_with9
 **/*.png

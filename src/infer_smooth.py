@@ -3,24 +3,17 @@ os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = str(pow(2,40))
 
 import cv2
 import numpy as np
-from collections import OrderedDict
 import matplotlib.pyplot as plt
-from scipy import stats
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import copy
 import argparse
 from tqdm import tqdm
-from PIL import Image
 
 from torchvision import transforms
 import options.options as option
-from data import create_dataloader, create_dataset
 from model import create_model
 import utils.utils as utils
-import data.utils as data_utils
-import matplotlib.patches as mpatches
 
 from huggingface_hub import login
 
@@ -31,7 +24,8 @@ abspath = os.path.abspath(__file__)
 parser = argparse.ArgumentParser()
 parser.add_argument('-opt', type=str, help='Path to option YAML file.')
 parser.add_argument('-root', type=str, default=None, choices=['.'])
-parser.add_argument('--infer_dir', type=str, required=True)
+parser.add_argument('--labels_dir', type=str, required=True)
+parser.add_argument('--images_dir', type=str, required=True)
 parser.add_argument('--weight_path', type=str, required=True)
 args = parser.parse_args()
 opt = option.parse(args.opt, root=args.root)
@@ -40,12 +34,6 @@ opt = option.dict_to_nonedict(opt)
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '%d' % opt['gpu_ids'][0]
 device = torch.device('cuda:0' if opt['gpu_ids'] is not None else 'cpu')
-
-# current_infer_img = os.path.parent(args.infer_dir)[:-4]
-current_infer_img = os.path.basename(args.infer_dir)
-working_dir = os.path.join('.', 'infer', opt['name'], current_infer_img)
-os.makedirs(working_dir, exist_ok=True)
-print("Working dir: ", working_dir)
 
 # HF Login to get pretrained weight
 login(opt['token'])
@@ -70,6 +58,9 @@ else:
 crop_sz = 256
 step = 256
 infer_size = 256
+small_h = small_w = 16
+ratio = int(crop_sz / small_h)
+small_step = step // ratio
 color_map = [
     [255, 255, 255],    # background
     [0, 128, 0],    # Viable tumor
@@ -94,13 +85,25 @@ def apply_threshold_mapping(image):
 
     return output
 
+def read_percent_from_color(image):
+    tolerance = 50
+    masks = []
+    for idx, color in enumerate(color_map):
+        color = np.array(color)
+        mask = np.all(np.abs(image - color) < tolerance, axis=-1)
+        masks.append(mask.sum())
+
+    return masks
+
+def open_img(image_path):
+    img = cv2.imread(image_path)[:, :, :3]
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img
+
 def prepare(infer_path):
     global crop_sz, step
     
-    # img = Image.open(infer_path).convert("RGB")
-    img = cv2.imread(infer_path)[:, :, :3]
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # img = np.array(img)
+    img = open_img(infer_path)
     
     return [img, utils.crop(img, crop_sz, step)]
     
@@ -131,7 +134,7 @@ def alpha_blending(im1, im2, alpha):
     out = cv2.addWeighted(im1, alpha , im2, 1-alpha, 0)
     return out
 
-def infer(infer_path):
+def infer(infer_path, label_path):
     global color_map
     infer_name = os.path.basename(infer_path)
     
@@ -140,6 +143,12 @@ def infer(infer_path):
     
     fx = 5e-2
     fy = 5e-2
+    
+    label = open_img(label_path)
+    label_mask = np.all(np.abs(label - np.array([255, 255, 255])) > 5, axis=-1).astype(int)
+    label_mask = cv2.resize(label_mask, None, fx=fx, fy=fy, interpolation=cv2.INTER_NEAREST)
+    
+    del label
     
     model.to(device)
     model.eval()
@@ -155,15 +164,15 @@ def infer(infer_path):
         'step': step
     }
     # img = postprocess(**kwargs)
+    img = img[:h,:w, :]
     img = cv2.resize(img, None, fx=fx, fy=fy)
     print(img.max())
     plt.imsave(os.path.join(working_dir, infer_name), img) 
     print("Save original image done") 
-        
-    # patches_dir = os.path.join(working_dir, "patches")
-    # os.makedirs(patches_dir, exist_ok=True)
+    
     preds_list, class_list = [], []
     class_counts = [0 for _ in range(7)]
+    
     for i, patch in tqdm(enumerate(patches_list), total=len(patches_list)):
         
         bg = np.ones((crop_sz, crop_sz, 3), 'float32') * 255
@@ -171,18 +180,11 @@ def infer(infer_path):
         bg[:r, :c, :] = patch
         patch = bg.astype(np.uint8)
         
-        # ori_patch = copy.deepcopy(patch)
         edge_score = laplacian_score(patch).mean()
-        # patch = cv2.cvtColor(patch, cv2.COLOR_BGR2RGB)
         
         # normalize
-        # patch = data_utils.normalize_np(patch / 255.0).astype(np.float32)
-        # patch_tensor = torch.tensor(patch).permute(2,0,1)
-        # im = patch_tensor.unsqueeze(0).to(device)
-        
         transform = transforms.Compose(
                 [
-                    # transforms.Resize(224),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 ]
@@ -190,32 +192,50 @@ def infer(infer_path):
         im = transform(patch).float().unsqueeze(0)
         
         if edge_score <= 5: # filter background
-            pred, class_ = index2color(0, im.cpu(), color_map)
-            preds_list.append(pred)   # skip
-            class_list.append(class_)
+            pred_im = np.zeros((small_h, small_w, 7))
+            pred_im[:, :, 0] = 1e-9
+            preds_list.append(pred_im)   # skip
             continue
         
         im = im.to(device)
         with torch.no_grad():
             pred = model(im)
-        pred, class_ = index2color(torch.argmax(pred.cpu().detach(), dim=-1), im.cpu(), color_map)
+        
+        pred = torch.softmax(pred, dim=-1).cpu().squeeze(0).numpy()
+        pred = np.ones((small_h, small_w, 7)) * pred
+        
         preds_list.append(pred)
-        class_list.append(class_)
-        try:
-            class_counts[class_] += 1
-        except:
-            print(class_)
     
     kwargs['sr_list'] = preds_list
-    prediction = (postprocess(**kwargs) * 255).astype(np.uint8)
-    kwargs['sr_list'] = class_list
-    # class_prediction = (postprocess(**kwargs)).astype(np.uint8)
+    kwargs['channel'] = 7
+    kwargs['step'] = int(small_step)
+    kwargs['patch_size'] = small_h
+    kwargs['h'] = int(h / ratio)
+    kwargs['w'] = int(w / ratio)
     
-    prediction = cv2.resize(prediction, (img.shape[1], img.shape[0]), fx=fx, fy=fy)
+    prediction = postprocess(**kwargs)  # hxwx7
+    prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2)
+    output = np.zeros((prediction.shape[0], prediction.shape[1], 3), dtype='uint8')
+    
+    for i in range(len(color_map)):
+        color = np.array(color_map[i]).astype(np.uint8)
+        mask = np.all(np.abs(prediction-i) < 1e-9, axis=-1)
+        output[mask] = color
+        
+    prediction = cv2.resize(output, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT)
+    label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT)
     
     
     # cut to align img and prediction
-    # img = img[:h, :w, :]
+    img_mask = np.expand_dims(np.all(np.abs(img - np.array([255, 255, 255])) > 0), axis=-1)
+    label_mask = np.expand_dims(label_mask, axis=-1)
+    
+    prediction = prediction * img_mask + np.ones_like(prediction)*255*(1-img_mask)
+    prediction = prediction * label_mask + np.ones_like(prediction)*255*(1-label_mask)
+    prediction = prediction.astype(np.uint8)
+    
+    class_counts = read_percent_from_color(prediction)
+    
     blend_im = alpha_blending(
         img, prediction, 0.6)
     
@@ -223,7 +243,7 @@ def infer(infer_path):
     
     del prediction  # free mem
     
-    # class_counts = np.array(class_counts)
+    class_counts = class_counts[1:] # skip_background
     class_percent = np.array(class_counts) / np.sum(np.array(class_counts))
     print(class_percent)
     
@@ -234,40 +254,96 @@ def infer(infer_path):
     print("Save prediction done")
         
     print("[RESULT]")
-    for i in range(7):
-        print(f"{labels[i]} - {round(class_percent[i], 4)}")
+    for i in range(6):
+        # if i==0: continue
+        # i += 1
+        print(f"{labels[i+1]} - {round(class_percent[i], 4)}")
         with open(os.path.join(working_dir, "result.txt"), "a") as f:
-            f.write(f"{labels[i]} - {round(class_percent[i], 4)}\n")
+            f.write(f"{labels[i+1]} - {round(class_percent[i], 3)*100}%\n")
+            
+    huvos_ratio = 1 - class_counts[0] / np.sum(class_counts[:5]) 
+    
+    if class_percent[-1] >= 0.99:
+        huvos_ratio = None
+    
     with open(os.path.join(working_dir, "result.txt"), "a") as f:
+        if huvos_ratio is not None:
+            f.write(f'total_necrosis: {round(huvos_ratio, 3)*100}% \n')
+        else:
+            f.write('total_necrosis: N/A \n')
         f.write(f"-------------\n")
         
     print("-"*20)
     
-    return class_counts
+    return class_counts, huvos_ratio
+
+def huvos_classify(huvos_ratio):
+    labels = ["I", "II", "III", "IV"]
+    index = 0
+    if huvos_ratio < 0.5:
+        index = 0
+    elif 0.5 <= huvos_ratio < 0.9:
+        index = 1
+    elif 0.9 <= huvos_ratio < 1.0:
+        index = 2
+    else:
+        index = 3
+    return labels[int(index)]
 
 
 if __name__=='__main__':
     
-    case_patch_counts = [0 for _ in range(len(color_map))]
-    with open(os.path.join(working_dir, "result.txt"), "w") as f:
-        f.write(f"======={args.infer_dir}=======\n")
+    
+    done_cases = [f"Case_{n}" for n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+    
+    for case in os.listdir(args.labels_dir):
+        if case not in done_cases: continue
+        if case != 'Case_1': continue
+        
+        label_dir = os.path.join(args.labels_dir, case)
+        image_dir = os.path.join(args.images_dir, case)
+        
+        # initialize working dir for each case
+        working_dir = os.path.join('.', 'infer', 'smooth', opt['name'], case)
+        os.makedirs(working_dir, exist_ok=True)
+        print("Working dir: ", working_dir)
+    
+        case_patch_counts = [0 for _ in range(len(color_map)-1)]
+        with open(os.path.join(working_dir, "result.txt"), "w") as f:
+            f.write(f"======={case}=======\n")
+            
+        huvos_case = []
+        
+        label_names = [n for n in os.listdir(label_dir) if ('.jpg' in n or '.png' in n)]
 
-    for infer_path in os.listdir(args.infer_dir):
-        
-        # start
-        infer_path = os.path.join(args.infer_dir, infer_path)
+        for label_name in label_names:
             
-        print("Process: ", infer_path)
-        slide_patch_counts = infer(infer_path)
-        print(slide_patch_counts)
-        
-        for i, class_count in enumerate(slide_patch_counts):
-            case_patch_counts[i] += slide_patch_counts[i]
+            # start
             
-    case_patch_percents = np.array(case_patch_counts) / np.sum(np.array(case_patch_counts))
-    with open(os.path.join(working_dir, "result.txt"), "a") as f:
-        f.write(f"{case_patch_percents}")
+            if "x8" in label_name:
+                image_name = label_name.split("-x8")[0] + '.png'
+                upsample = True
+            else:
+                image_name = label_name.split("-labels")[0] + '.png'
+            
+            infer_path = os.path.join(image_dir, image_name)
+            label_path = os.path.join(label_dir, label_name)
+                
+            print("Process: ", infer_path)
+            slide_patch_counts, huvos_ratio = infer(infer_path, label_path)
+            if huvos_ratio is not None:
+                huvos_case.append(huvos_ratio)
+            
+            for i, class_count in enumerate(slide_patch_counts):
+                case_patch_counts[i] += slide_patch_counts[i]
+                
+        case_patch_percents = np.array(case_patch_counts) / np.sum(np.array(case_patch_counts))
         
+        huvos_case = np.mean(huvos_case)
+        
+        with open(os.path.join(working_dir, "result.txt"), "a") as f:
+            f.write(f"Total Necrosis on case: {round(huvos_case, 3) * 100}%\n")
+            f.write(f"Huvos: {huvos_classify(huvos_case)}")
         
             
             

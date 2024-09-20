@@ -42,6 +42,12 @@ class UNI_lora_cls(nn.Module):
         out = self.classifier(feature)
         return out
     
+    def full_forward(self, x):
+        bs, c, h, w = x.shape
+        feature = self.tile_encoder(x)
+        out = self.classifier(feature)
+        return feature, out
+    
     def apply_lora_to_vit(self, lora_r, lora_alpha):
         """
         Apply LoRA to all the Linear layers in the Vision Transformer model.
