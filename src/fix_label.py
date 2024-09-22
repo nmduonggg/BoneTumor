@@ -13,6 +13,7 @@ from model import create_model
 import utils.utils as utils
 
 abspath = os.path.abspath(__file__)
+import faulthandler; faulthandler.enable()
 # Image.MAX_IMAGE_PIXELS = (2e40).__str__()
 
 
@@ -60,7 +61,7 @@ def apply_threshold_mapping(image):
     return output
 
 def read_percent_from_color(image):
-    tolerance = 50
+    tolerance = 20
     masks = []
     for idx, color in enumerate(color_map):
         color = np.array(color)
@@ -69,8 +70,8 @@ def read_percent_from_color(image):
 
     return masks
 
-def open_img(image_path):
-    img = cv2.imread(image_path)[:, :, :3]
+def open_img(path):
+    img = cv2.imread(path)[:, :, :3].astype('uint8')
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
@@ -105,6 +106,8 @@ def index2color(idx, patch, color_map):
     return color_np, idx
 
 def alpha_blending(im1, im2, alpha):
+    im1 = im1.astype('uint8')
+    im2 = im2.astype('uint8')
     out = cv2.addWeighted(im1, alpha , im2, 1-alpha, 0)
     return out
 
@@ -112,32 +115,41 @@ def infer(infer_path, label_path, old_label_path):
     global color_map
     infer_name = os.path.basename(infer_path)
     
+    print("Image path: ", infer_path)
+    print("Original label path: ", label_path)
+    print("Old prediction: ", old_label_path)
+    
     with open(os.path.join(working_dir, "result.txt"), "a") as f:
         f.write(f"{infer_name}\n")
     
     fx = 5e-2
     fy = 5e-2
     
-    label = open_img(label_path)
-    label_mask = cv2.resize(label, None, fx=fx, fy=fy, interpolation=cv2.INTER_NEAREST_EXACT)
-    label_mask = np.all(np.abs(label_mask - np.array([255, 255, 255])) > 0, axis=-1).astype(int)
+    prediction = open_img(old_label_path)
+    
+    print("start read label")
+    label_mask = open_img(label_path)
+    print("reading done")
+    label_mask = cv2.resize(label_mask, (prediction.shape[1], prediction.shape[0]),
+                            interpolation=cv2.INTER_NEAREST)
+    plt.imsave(os.path.join(working_dir, 'label_mask.png'), label_mask)
+    label_mask = np.any(np.abs(label_mask - np.array([255, 255, 255])) > 0, axis=-1).astype(int)
+    
+    label_mask = np.expand_dims(label_mask, axis=-1)
     
     print("create label mask done")
     
-    del label
-    
-    prediction = open_img(old_label_path)
-    prediction = prediction * label_mask + np.ones_like(prediction) * 255 * (1-label_mask)
+    prediction = prediction * label_mask + np.ones_like(prediction) * 255 * (1 - label_mask)
     class_counts = read_percent_from_color(prediction)
     
     plt.imsave(os.path.join(working_dir, f"{infer_name.split('.')[0]}_pred.png"), prediction.astype('uint8')) 
     
     img = open_img(infer_path)
     plt.imsave(os.path.join(working_dir, f"{infer_name.split('.')[0]}.png"), img.astype('uint8')) 
-    label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT)
+    img = cv2.resize(img, (prediction.shape[1], prediction.shape[0]))
+    # label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
     
     # cut to align img and prediction
-    label_mask = np.expand_dims(label_mask, axis=-1)
     img = img * label_mask + np.ones_like(img) * 255 * (1 - label_mask)
     
     blend_im = alpha_blending(img, prediction, 0.6)
@@ -161,16 +173,16 @@ def infer(infer_path, label_path, old_label_path):
         # i += 1
         print(f"{labels[i+1]} - {round(class_percent[i], 4)}")
         with open(os.path.join(working_dir, "result.txt"), "a") as f:
-            f.write(f"{labels[i+1]} - {round(class_percent[i], 3)*100}%\n")
+            f.write(f"{labels[i+1]} - {(round(class_percent[i], 1)*100):.1f}%\n")
             
-    huvos_ratio = 1 - class_counts[0] / np.sum(class_counts[:5]) 
+    huvos_ratio = 1 - class_counts[0] / (np.sum(class_counts[:5]) + 1e-9) 
     
     if class_percent[-1] >= 0.99:
         huvos_ratio = None
     
     with open(os.path.join(working_dir, "result.txt"), "a") as f:
         if huvos_ratio is not None:
-            f.write(f'total_necrosis: {round(huvos_ratio, 3)*100}% \n')
+            f.write(f'total_necrosis: {(round(huvos_ratio, 1)*100):.1f}% \n')
         else:
             f.write('total_necrosis: N/A \n')
         f.write(f"-------------\n")
@@ -182,11 +194,11 @@ def infer(infer_path, label_path, old_label_path):
 def huvos_classify(huvos_ratio):
     labels = ["I", "II", "III", "IV"]
     index = 0
-    if huvos_ratio < 0.5:
+    if huvos_ratio < 50:
         index = 0
-    elif 0.5 <= huvos_ratio < 0.9:
+    elif 50 <= huvos_ratio < 90:
         index = 1
-    elif 0.9 <= huvos_ratio < 1.0:
+    elif 90 <= huvos_ratio < 100:
         index = 2
     else:
         index = 3
@@ -203,7 +215,7 @@ if __name__=='__main__':
         # if case != 'Case_1': continue
         
         label_dir = os.path.join(args.labels_dir, case)
-        image_dir = os.path.join(args.images_dir, case) # Old visualizations
+        image_dir = os.path.join(args.old_labels_dir, case) # Old visualizations
         old_label_dir = os.path.join(args.old_labels_dir, case)
         
         # initialize working dir for each case
@@ -230,7 +242,6 @@ if __name__=='__main__':
                 image_name = label_name.split("-labels")[0] + '.png'
                 
             
-            
             infer_path = os.path.join(old_label_dir, image_name)
             label_path = os.path.join(label_dir, label_name)
             
@@ -248,9 +259,10 @@ if __name__=='__main__':
         case_patch_percents = np.array(case_patch_counts) / np.sum(np.array(case_patch_counts))
         
         huvos_case = np.mean(huvos_case)
+        huvos_case = round(huvos_case*100, 1)
         
         with open(os.path.join(working_dir, "result.txt"), "a") as f:
-            f.write(f"Total Necrosis on case: {round(huvos_case, 3) * 100}%\n")
+            f.write(f"Total Necrosis on case: {huvos_case:.1f}%\n")
             f.write(f"Huvos: {huvos_classify(huvos_case)}")
         
             
