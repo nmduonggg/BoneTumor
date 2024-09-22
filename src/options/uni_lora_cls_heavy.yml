@@ -14,7 +14,7 @@ datasets:
     name: Osteosarcoma
     mode: classification
     image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_for_phase2_with9.json
+    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
@@ -28,7 +28,7 @@ datasets:
     name: Osteosarcoma
     mode: classification
     image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_for_phase2_with9.json
+    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
@@ -41,7 +41,7 @@ datasets:
     name: Osteosarcoma
     mode: classification
     image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_for_phase2_with9.json
+    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
