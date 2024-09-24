@@ -18,7 +18,6 @@ import utils.utils as utils
 from huggingface_hub import login
 
 abspath = os.path.abspath(__file__)
-# Image.MAX_IMAGE_PIXELS = (2e40).__str__()
 
 
 parser = argparse.ArgumentParser()
@@ -26,7 +25,9 @@ parser.add_argument('-opt', type=str, help='Path to option YAML file.')
 parser.add_argument('-root', type=str, default=None, choices=['.'])
 parser.add_argument('--labels_dir', type=str, required=True)
 parser.add_argument('--images_dir', type=str, required=True)
-parser.add_argument('--weight_path', type=str, required=True)
+parser.add_argument('--phase1_path', type=str, required=True)
+parser.add_argument('--phase2_path', type=str, required=True)
+
 args = parser.parse_args()
 opt = option.parse(args.opt, root=args.root)
 
@@ -43,22 +44,21 @@ model = create_model(opt)
 # fix and load weight
 # state_dict = torch.load(opt['path']['pretrain_model'], map_location='cpu')
 
-if args.weight_path != '':
-    state_dict = torch.load(args.weight_path, map_location='cpu')
-    # current_dict = model.state_dict()
-    # new_state_dict={k:v if v.size()==current_dict[k].size()  else  current_dict[k] for k,v in zip(current_dict.keys(), state_dict.values())}    # fix the size of checkpoint state dict
+if args.phase1_path != '' and args.phase2_path != '':
+    phase1_dict = torch.load(args.phase1_path, map_location='cpu')
+    phase2_dict = torch.load(args.phase2_path, map_location='cpu')
     _strict = True
 
-    model.load_state_dict(state_dict, strict=_strict)  
-    print("[INFO] Load weight from:", args.weight_path)
+    model.load_state_dict(phase1_dict, phase2_dict, strict=_strict)  
+    print(f"[INFO] Load phase 1 weight from: {args.phase1_path}")
+    print(f"[INFO] Load phase 2 weight from: {args.phase2_path}")
 else:
     print("No pretrained weight found")
     
 # Init
-crop_sz = 256
-step = 240
-infer_size = 256
-small_h = small_w = 16
+crop_sz = 256*8
+step = 256*8
+small_h = small_w = 256
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
 color_map = [
@@ -163,6 +163,8 @@ def infer(infer_path, label_path):
         'patch_size': crop_sz, 
         'step': step
     }
+    # for k, v in kwargs.items():
+    #     if k != 'sr_list': print(k, v)
     # img = postprocess(**kwargs)
     img = img[:h,:w, :]
     img = cv2.resize(img, None, fx=fx, fy=fy)
@@ -192,26 +194,23 @@ def infer(infer_path, label_path):
         im = transform(patch).float().unsqueeze(0)
         
         if edge_score <= 5: # filter background
-            pred_im = np.zeros((small_h, small_w, 7))
+            pred_im = np.zeros((crop_sz, crop_sz, 7))
             pred_im[:, :, 0] = 1e-9
             preds_list.append(pred_im)   # skip
             continue
         
         im = im.to(device)
         with torch.no_grad():
-            pred = model(im)
-        
+            pred = model(im)[..., :-1]
+        # print(pred.shape)
+        # print(pred.shape)
         pred = torch.softmax(pred, dim=-1).cpu().squeeze(0).numpy()
-        pred = np.ones((small_h, small_w, 7)) * pred
+        # pred = np.ones((small_h, small_w, 7)) * pred
         
         preds_list.append(pred)
     
     kwargs['sr_list'] = preds_list
     kwargs['channel'] = 7
-    kwargs['step'] = int(small_step)
-    kwargs['patch_size'] = small_h
-    kwargs['h'] = int(h / ratio)
-    kwargs['w'] = int(w / ratio)
     
     prediction = postprocess(**kwargs)  # hxwx7
     prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2)
@@ -306,7 +305,7 @@ if __name__=='__main__':
         image_dir = os.path.join(args.images_dir, case)
         
         # initialize working dir for each case
-        working_dir = os.path.join('.', 'infer', 'smooth_retrain', opt['name'], case)
+        working_dir = os.path.join('.', 'infer', 'smooth_stacked', opt['name'], case)
         os.makedirs(working_dir, exist_ok=True)
         print("Working dir: ", working_dir)
     

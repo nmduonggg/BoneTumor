@@ -265,7 +265,7 @@ def combine(sr_list, num_h, num_w, h, w, patch_size, step, channel=3):
             sr_img[i*step: i*step+patch_size, j*step: j*step+patch_size,:]+=sr_subim
             index+=1
             
-    sr_img=sr_img.astype('float32')
+    # sr_img=sr_img.astype('float32')
 
     for j in range(1,num_w):
         sr_img[:,j*step:j*step+(patch_size-step),:]/=2
@@ -350,7 +350,7 @@ def compute_segmentation_metrics(preds, targets):
     
     return iou_per_class, precision_per_class, recall_per_class, accuracy
 
-def compute_classification_metrics(preds, targets):
+def compute_classification_metrics(preds, targets, drop_last=False, inv_mask=None):
     """
     Calculate IoU, Precision, and Recall for multi-class segmentation.
     
@@ -363,9 +363,9 @@ def compute_classification_metrics(preds, targets):
         precision_per_class: Precision for each class
         recall_per_class: Recall for each class
     """
-    num_classes = preds.shape[1]
     # Step 1: Convert logits or softmax to predicted class labels (B, H, W)
-    preds = torch.argmax(preds, dim=1)  # (B, H, W)
+    num_classes = preds.shape[-1]
+    preds = torch.argmax(preds, dim=-1)
     
     # Initialize metrics for each class
     iou_per_class = []
@@ -373,8 +373,15 @@ def compute_classification_metrics(preds, targets):
     recall_per_class = []
     
     # Step 2: Calculate metrics for each class
+    if drop_last: 
+        num_classes = num_classes - 1
+    if inv_mask is not None:
+        # print(preds.shape, inv_mask.shape)
+        preds = preds.masked_select(inv_mask)
+        targets = targets.masked_select(inv_mask)
     for class_idx in range(num_classes):
         # True Positives, False Positives, and False Negatives for each class
+        
         TP = ((preds == class_idx) & (targets == class_idx)).sum()  # (B,)
         FP = ((preds == class_idx) & (targets != class_idx)).sum()  # (B,)
         FN = ((preds != class_idx) & (targets == class_idx)).sum()  # (B,)

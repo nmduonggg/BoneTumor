@@ -37,6 +37,7 @@ opt = option.dict_to_nonedict(opt)
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '%d' % opt['gpu_ids'][0]
 device = torch.device('cuda:0' if opt['gpu_ids'] is not None else 'cpu')
+# device = torch.device('cpu')
 
 # HF Login to get pretrained weight
 login(opt['token'])
@@ -65,6 +66,19 @@ color_map = [
     [165, 42, 42],  # Inflammatory
     [0, 0, 255]]    # Non-tumor tissue
 
+def write2file(metadata, metadata_file, mode='a'):
+    class NpEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.integer):
+                return int(obj)
+            if isinstance(obj, np.floating):
+                return float(obj)
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return super(NpEncoder, self).default(obj)
+    with open(metadata_file, mode) as f:
+        json.dump(metadata, f, indent=4, cls=NpEncoder)
+
 def apply_threshold_mapping(image, target_colors, tolerance=50):
     
     masks = []
@@ -75,11 +89,11 @@ def apply_threshold_mapping(image, target_colors, tolerance=50):
     return np.argmax(np.array(masks))
 
 def fix_label_image(im, label):
-    im_mask = np.all(np.abs(im - np.array([255, 255, 255])) > 10, axis=-1)
+    im_mask = np.any(np.abs(im - np.array([255, 255, 255])) > 10, axis=-1)
     im_mask = np.expand_dims(im_mask, axis=-1)
     label = label * im_mask + np.ones_like(label) * 255 * (1 - im_mask)
     
-    label_mask = np.all(np.abs(label - np.array([255, 255, 255])) > 10, axis=-1)
+    label_mask = np.any(np.abs(label - np.array([255, 255, 255])) > 10, axis=-1)
     label_mask = np.expand_dims(label_mask, axis=-1)
     im = im * label_mask + np.ones_like(im) * 255 * (1 - label_mask)
     
@@ -91,7 +105,7 @@ def prepare(infer_path):
     img = cv2.imread(infer_path)[:, :, :3]
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
-    return utils.crop(img, crop_sz, step)
+    return utils.crop(img, crop_sz, step)   
 
 
 def infer(image_filepath, label_filepath):
@@ -147,32 +161,59 @@ if __name__=='__main__':
     
     input_folder = os.path.join(args.outdir, 'data_x')
     label_folder = os.path.join(args.outdir, 'data_y')
+    metadata_outfile = os.path.join(args.outdir, 'metadata.json')
     
     os.makedirs(input_folder, exist_ok=True)
     os.makedirs(label_folder, exist_ok=True)
     
-    metadata_file = os.path.join(args.data_dir, 'metadata.json')
-    with open(metadata_file, 'r') as f:
-        data_list = json.load(f)
-    
-    print("Processing: ", args.data_dir)
+    if os.path.isfile(metadata_outfile):
+        with open(metadata_outfile, 'r') as f:
+            original_data_list = json.load(f)
+        print("Load original metadat from: ", metadata_outfile)
+    else: 
+        original_data_list = list()
+        print("Initialize new data list")
+        
     print("Save to: ", args.outdir)
     os.makedirs(args.outdir, exist_ok=True)
+        
+    #----------------------------------------------# processing
     
-    for metadata in tqdm(data_list, total=len(data_list)):
-        crop_image_name = metadata['croped_image_filename']
-        crop_label_name = metadata['croped_label_filename']
-        crop_index = metadata['crop_index']
-            
-        # start
-        image_filepath = os.path.join(args.data_dir, 'images', crop_image_name)
-        label_filepath = os.path.join(args.data_dir, 'labels', crop_label_name)                
+    done_cases = [f"Case_{i}" for i in []]
+    
+    for case_name in os.listdir(args.data_dir):
+        if "Case" not in case_name: continue
+        if case_name in done_cases: continue
         
-        features, preds, labels = infer(image_filepath, label_filepath)
-        inputs = np.concatenate((features, preds), axis=1)
+        print(f"==========={case_name}===========")
+        case_dir = os.path.join(args.data_dir, case_name)
+    
+        metadata_file = os.path.join(case_dir, 'metadata.json')
+        with open(metadata_file, 'r') as f:
+            data_list = json.load(f)
         
-        np.save(os.path.join(input_folder, f"{crop_index}.npy"), inputs)
-        np.save(os.path.join(label_folder, f"{crop_index}.npy"), labels)
+        # original_data_list += data_list
+        cnt = 0
+        for metadata in tqdm(data_list, total=len(data_list)):
+            crop_image_name = metadata['croped_image_filename']
+            crop_label_name = metadata['croped_label_filename']
+            crop_index = metadata['crop_index']
+                
+            # start
+            image_filepath = os.path.join(case_dir, 'images', crop_image_name)
+            label_filepath = os.path.join(case_dir, 'labels', crop_label_name)                
             
+            features, preds, labels = infer(image_filepath, label_filepath)
+            inputs = np.concatenate((features, preds), axis=1)
             
+            np.save(os.path.join(input_folder, f"{crop_index}.npy"), inputs)
+            np.save(os.path.join(label_folder, f"{crop_index}.npy"), labels)
             
+            original_data_list.append(metadata)
+            
+            if cnt % 1000 == 0: 
+                write2file(original_data_list, metadata_outfile, 'w')
+                print("[INFO] Write metadata")
+            cnt += 1
+                
+                

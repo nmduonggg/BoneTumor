@@ -2,7 +2,7 @@
 import torch
 import torch.utils.data
 
-def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
+def create_dataloader(dataset, dataset_opt, opt=None, sampler=None, collate_fn=None):
     phase = dataset_opt['phase']
     batch_size = dataset_opt['batch_size']
     shuffle = True
@@ -15,9 +15,9 @@ def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
             sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))  
             shuffle=False 
         
-        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, sampler=sampler, drop_last=False, pin_memory=True)
+        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, sampler=sampler, collate_fn=collate_fn, drop_last=False, pin_memory=True)
     else:
-        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, pin_memory=True)
+        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, pin_memory=True, collate_fn=collate_fn)
 
 
 def create_dataset(dataset_opt):
@@ -29,6 +29,8 @@ def create_dataset(dataset_opt):
         from data.SegmentDataset import SegmentDataset as D
     elif mode == 'classification':
         from data.ClassificationDataset import ClassificationDataset as D
+    elif mode == 'reorder':
+        from data.ReorderDataset import ReorderDataset as D
     else:
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(mode))
     dataset = D(dataset_opt)

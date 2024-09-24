@@ -6,6 +6,7 @@ from typing import Iterable, List
 import torch
 from torch import Tensor
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn import Transformer
 from torch.nn.utils.rnn import pad_sequence
 
@@ -38,40 +39,90 @@ class TokenEmbedding(nn.Module):
 
     def forward(self, tokens: Tensor):
         return self.embedding(tokens.long()) * math.sqrt(self.emb_size)
-    
-# Seq2Seq Network
+
+class AttentionHead(nn.Module):
+
+    def __init__(self, dim_inp, dim_out):
+        super(AttentionHead, self).__init__()
+
+        self.dim_inp = dim_inp
+
+        self.q = nn.Linear(dim_inp, dim_out)
+        self.k = nn.Linear(dim_inp, dim_out)
+        self.v = nn.Linear(dim_inp, dim_out)
+
+    def forward(self, input_tensor: torch.Tensor, attention_mask: torch.Tensor = None):
+        query, key, value = self.q(input_tensor), self.k(input_tensor), self.v(input_tensor)
+
+        scale = query.size(1) ** 0.5
+        scores = torch.bmm(query, key.transpose(1, 2)) / scale
+
+        scores = scores.masked_fill_(attention_mask, -1e9)
+        attn = F.softmax(scores, dim=-1)
+        context = torch.bmm(attn, value)
+
+        return context
+class MultiHeadAttention(nn.Module):
+
+    def __init__(self, num_heads, dim_inp, dim_out):
+        super(MultiHeadAttention, self).__init__()
+
+        self.heads = nn.ModuleList([
+            AttentionHead(dim_inp, dim_out) for _ in range(num_heads)
+        ])
+        self.linear = nn.Linear(dim_out * num_heads, dim_inp)
+        self.norm = nn.LayerNorm(dim_inp)
+
+    def forward(self, input_tensor: torch.Tensor, attention_mask: torch.Tensor):
+        s = [head(input_tensor, attention_mask) for head in self.heads]
+        scores = torch.cat(s, dim=-1)
+        scores = self.linear(scores)
+        return self.norm(scores)
+
+
+class Encoder(nn.Module):
+
+    def __init__(self, dim_inp, dim_out, attention_heads=4, dropout=0.1):
+        super(Encoder, self).__init__()
+
+        self.attention = MultiHeadAttention(attention_heads, dim_inp, dim_out)  # batch_size x sentence size x dim_inp
+        self.feed_forward = nn.Sequential(
+            nn.Linear(dim_inp, dim_out),
+            nn.Dropout(dropout),
+            nn.GELU(),
+            nn.Linear(dim_out, dim_inp),
+            nn.Dropout(dropout)
+        )
+        self.norm = nn.LayerNorm(dim_inp)
+
+    def forward(self, input_tensor: torch.Tensor, attention_mask: torch.Tensor):
+        context = self.attention(input_tensor, attention_mask)
+        res = self.feed_forward(context)
+        return self.norm(res)
+
+
 class TransformerReorder(nn.Module):
-    def __init__(self,
-                 num_encoder_layers: int = 4,
-                 num_decoder_layers: int = 4,
-                 emb_size: int = 1024,
-                 nhead: int = 8,
-                 vocab_size: int = 16*16,
-                 dim_feedforward: int = 512,
-                 dropout: float = 0.1):
-        super(Seq2SeqTransformer, self).__init__()
-        self.transformer = Transformer(d_model=emb_size,
-                                       nhead=nhead,
-                                       num_encoder_layers=num_encoder_layers,
-                                       num_decoder_layers=num_decoder_layers,
-                                       dim_feedforward=dim_feedforward,
-                                       dropout=dropout)
-        self.generator = nn.Linear(emb_size, tgt_vocab_size)
-        self.tok_emb = TokenEmbedding(vocab_size, emb_size)
-        self.positional_encoding = PositionalEncoding(
-            emb_size, dropout=dropout)
 
-    def forward(self,
-                src: Tensor,
-                trg: Tensor, ):
-        src_emb = self.positional_encoding(self.tok_emb(src))
-        tgt_emb = self.positional_encoding(self.tok_emb(trg))
-        outs = self.transformer(src_emb, tgt_emb)   # mask is skipped 
-        return self.generator(outs)
+    def __init__(self, 
+                vocab_size:int=8,
+                dim_inp=1024,
+                dim_out=1024,
+                attention_heads=4):
+        super(TransformerReorder, self).__init__()
 
-    def encode(self, src: Tensor):
-        return self.transformer.encoder(self.positional_encoding(self.src_tok_emb(src)))
+        self.embedding = TokenEmbedding(vocab_size, dim_inp)
+        self.encoder = Encoder(dim_inp, dim_out, attention_heads)
 
-    def decode(self, tgt: Tensor, memory: Tensor):
-        return self.transformer.decoder(self.positional_encoding(
-                                        self.tgt_tok_emb(tgt)), memory, )
+        self.classifier = nn.Linear(dim_out, vocab_size)
+
+    def forward(self, input_tensor: torch.Tensor, attention_mask: torch.Tensor = None):
+        # input_tensor: [SxBxE]
+        img_features = input_tensor[:, :, :-1]
+        src_cls = input_tensor[:, :, -1]
+        
+        embedded = self.embedding(src_cls) + img_features
+        encoded = self.encoder(embedded, attention_mask)
+
+        outs = self.classifier(encoded) #NTE
+        
+        return outs
