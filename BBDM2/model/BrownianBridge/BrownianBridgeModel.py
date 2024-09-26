@@ -110,6 +110,8 @@ class BrownianBridgeModel(nn.Module):
 
         x_t, objective = self.q_sample(x0, y, t, noise)
         objective_recon = self.denoise_fn(x_t, timesteps=t, context=context)
+        
+        # print(objective.shape, objective_recon.shape)
 
         if self.loss_type == 'l1':
             recloss = (objective - objective_recon).abs().mean()

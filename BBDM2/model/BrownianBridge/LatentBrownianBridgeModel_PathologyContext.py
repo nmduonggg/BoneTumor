@@ -64,9 +64,10 @@ class LatentBrownianBridgeModel_Pathology(BrownianBridgeModel):
 
     def get_cond_stage_context(self, x_cont):
         if self.cond_stage_model is not None:
-            context = self.cond_stage_model.encoder(x_cont)
+            context = self.cond_stage_model(x_cont)
+            # context = self.encode(x_cont, type='cont')
             if self.condition_key == 'first_stage':
-                context = context.detach()
+                context = context[1].detach()
         else:
             context = None
         return context

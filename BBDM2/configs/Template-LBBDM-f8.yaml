@@ -1,8 +1,8 @@
 # Latent Brownian Bridge Diffusion Model Template(Latent Space)
 runner: 'BBDMRunner_PathologyContext'
 training:
-  n_epochs: 50
-  n_steps: 1000000
+  n_epochs: 100
+  n_steps: 2000000
   save_interval: 1
   sample_interval: 1000
   validation_interval: 1
@@ -22,13 +22,13 @@ data:
     to_normal: True
     flip: True
   train:
-    batch_size: 4
+    batch_size: 8
     shuffle: True
   val:
-    batch_size: 4
+    batch_size: 8
     shuffle: True
   test:
-    batch_size: 4
+    batch_size: 8
     # shuffle: False
 
 model:
@@ -99,9 +99,9 @@ model:
       sample_type: 'linear' # options {"linear", "sin"}
       sample_step: 256
 
-      num_timesteps: 256 # timesteps
-      eta: 0.5 # DDIM reverse process eta
-      max_var: 0.5 # maximum variance
+      num_timesteps: 1024 # timesteps
+      eta: 1.0 # DDIM reverse process eta
+      max_var: 1.0 # maximum variance
 
       UNetParams:
         image_size: 32
@@ -125,4 +125,4 @@ model:
         resblock_updown: True
         use_spatial_transformer: True
         context_dim: 4
-        condition_key: "first_stage" # options {"SpatialRescaler", "first_stage", "nocond"}
+        condition_key: "SpatialRescaler" # options {"SpatialRescaler", "first_stage", "nocond"}
