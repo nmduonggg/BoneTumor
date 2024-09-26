@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import argparse
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from torchvision import transforms
 import options.options as option
@@ -40,7 +41,10 @@ device = torch.device('cuda:0' if opt['gpu_ids'] is not None else 'cpu')
 # device = torch.device('cpu')
 
 # HF Login to get pretrained weight
-login(opt['token'])
+# login(opt['token'])
+# import subprocess
+# subprocess.run(["huggingface-cli", "login", "--token", opt['token']])
+# login(opt['token'])
     
 model = create_model(opt)
 
@@ -105,20 +109,25 @@ def prepare(infer_path):
     img = cv2.imread(infer_path)[:, :, :3]
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     
-    return utils.crop(img, crop_sz, step)   
+    return img, utils.crop(img, crop_sz, step)
 
 
-def infer(image_filepath, label_filepath):
+def infer(image_filepath, label_filepath, size=256):
     global color_map
     
     model.to(device)
     model.eval()
     
-    image_patches = prepare(image_filepath)[0]
-    label_patches = prepare(label_filepath)[0]
+    img, preprocess_elems = prepare(image_filepath)
+    image_patches, num_h, num_w, h, w = preprocess_elems
+    label, preprocess_elems = prepare(label_filepath)
+    label_patches = preprocess_elems[0]
     assert(len(image_patches)==len(label_patches))
     
-    preds_list, features_list, labels_list = [], [], []
+    img = cv2.resize(img, (size, size)).astype('uint8')
+    label = cv2.resize(label, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
+    
+    preds_list = []
     
     for im_patch, gt_patch in zip(image_patches, label_patches):
         
@@ -136,35 +145,33 @@ def infer(image_filepath, label_filepath):
                     transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 ]
             )
-        im_patch = transform(im_patch).float().unsqueeze(0)
+        im = transform(im_patch).float().unsqueeze(0)
         
-        im_patch = im_patch.to(device)
+        im = im.to(device)
         with torch.no_grad():
-            feature, pred = model.full_forward(im_patch)
+            pred = model(im)
         
         pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
-        feature = feature.clone().detach().cpu().numpy().reshape(-1)
-        features_list.append(feature)
-        preds_list.append(pred)
-        labels_list.append(
-            apply_threshold_mapping(gt_patch, color_map)
-        )
+        pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
         
-    features = np.vstack(features_list)
-    preds = np.vstack(preds_list)
-    labels = np.vstack(labels_list)
+        preds_list.append(pred_im)
     
-    return features, preds, labels
+    pred = utils.combine(preds_list, num_h, num_w, h, w, crop_sz, step, 3)
+    pred = cv2.resize(pred, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
+    
+    return pred, label, img
 
 
 if __name__=='__main__':
     
-    input_folder = os.path.join(args.outdir, 'data_x')
-    label_folder = os.path.join(args.outdir, 'data_y')
+    input_folder = os.path.join(args.outdir, 'false_pred')
+    label_folder = os.path.join(args.outdir, 'label')
+    img_folder = os.path.join(args.outdir, 'images')
     metadata_outfile = os.path.join(args.outdir, 'metadata.json')
     
     os.makedirs(input_folder, exist_ok=True)
     os.makedirs(label_folder, exist_ok=True)
+    os.makedirs(img_folder, exist_ok=True)
     
     if os.path.isfile(metadata_outfile):
         with open(metadata_outfile, 'r') as f:
@@ -203,15 +210,16 @@ if __name__=='__main__':
             image_filepath = os.path.join(case_dir, 'images', crop_image_name)
             label_filepath = os.path.join(case_dir, 'labels', crop_label_name)                
             
-            features, preds, labels = infer(image_filepath, label_filepath)
-            inputs = np.concatenate((features, preds), axis=1)
+            pred_image, label_image, img_image = infer(image_filepath, label_filepath)
             
-            np.save(os.path.join(input_folder, f"{crop_index}.npy"), inputs)
-            np.save(os.path.join(label_folder, f"{crop_index}.npy"), labels)
+            plt.imsave(os.path.join(input_folder, f"{crop_index}.png"), pred_image)
+            plt.imsave(os.path.join(label_folder, f"{crop_index}.png"), label_image)
+            plt.imsave(os.path.join(img_folder, f"{crop_index}.png"), img_image)
             
+            metadata['case'] = metadata.get('case', case_name) 
             original_data_list.append(metadata)
             
-            if cnt % 1000 == 0: 
+            if cnt % 1000 == 0:
                 write2file(original_data_list, metadata_outfile, 'w')
                 print("[INFO] Write metadata")
             cnt += 1

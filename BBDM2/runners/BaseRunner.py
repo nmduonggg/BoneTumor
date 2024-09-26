@@ -442,7 +442,8 @@ class BaseRunner(ABC):
                             val_batch = next(iter(val_loader))
                             self.validation_step(val_batch=val_batch, epoch=epoch, step=self.global_step)
 
-                        if self.global_step % int(self.config.training.sample_interval * epoch_length) == 0:
+                        # if self.global_step % int(self.config.training.sample_interval * epoch_length) == 0:
+                        if self.global_step % int(self.config.training.sample_interval) == 0:
                             # val_batch = next(iter(val_loader))
                             # self.validation_step(val_batch=val_batch, epoch=epoch, step=self.global_step)
 

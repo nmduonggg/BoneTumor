@@ -1,11 +1,11 @@
 # Latent Brownian Bridge Diffusion Model Template(Latent Space)
-runner: "BBDMRunner"
+runner: 'BBDMRunner_PathologyContext'
 training:
-  n_epochs: 100
-  n_steps: 200000
-  save_interval: 2
-  sample_interval: 2
-  validation_interval: 2
+  n_epochs: 50
+  n_steps: 1000000
+  save_interval: 1
+  sample_interval: 1000
+  validation_interval: 1
   accumulate_grad_batches: 4
 
 testing:
@@ -13,27 +13,27 @@ testing:
   sample_num: 5
 
 data:
-  dataset_name: 'dataset_name'
-  dataset_type: 'custom_aligned'
+  dataset_name: 'PredOnly'
+  dataset_type: 'custom_aligned_refine'
   dataset_config:
-    dataset_path: 'dataset_path'
+    dataset_path: '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
     image_size: 256
     channels: 3
     to_normal: True
     flip: True
   train:
-    batch_size: 8
+    batch_size: 4
     shuffle: True
   val:
-    batch_size: 8
+    batch_size: 4
     shuffle: True
   test:
-    batch_size: 8
+    batch_size: 4
     # shuffle: False
 
 model:
   model_name: "LBBDM-f8" # part of result path
-  model_type: "LBBDM" # specify a module
+  model_type: "LBBDM-Pathology" # specify a module
   latent_before_quant_conv: False
   normalize_latent: False
   only_load_latent_mean_std: False
@@ -53,7 +53,7 @@ model:
 
   VQGAN:
     params:
-      ckpt_path: 'results/VQGAN-new/CelebAMaskHQ-f8.ckpt'
+      ckpt_path: '../RAW/pretrained_weights/vq_f8.ckpt'
       embed_dim: 4
       n_embed: 16384
       ddconfig:
@@ -80,7 +80,7 @@ model:
     optimizer:
       weight_decay: 0.000
       optimizer: 'Adam'
-      lr: 1.e-4
+      lr: 3.e-4
       beta1: 0.9
 
     lr_scheduler:
@@ -97,15 +97,15 @@ model:
 
       skip_sample: True
       sample_type: 'linear' # options {"linear", "sin"}
-      sample_step: 200
+      sample_step: 256
 
-      num_timesteps: 1000 # timesteps
-      eta: 1.0 # DDIM reverse process eta
-      max_var: 1.0 # maximum variance
+      num_timesteps: 256 # timesteps
+      eta: 0.5 # DDIM reverse process eta
+      max_var: 0.5 # maximum variance
 
       UNetParams:
         image_size: 32
-        in_channels: 4
+        in_channels: 8
         model_channels: 128
         out_channels: 4
         num_res_blocks: 2
@@ -123,6 +123,6 @@ model:
         num_head_channels: 64
         use_scale_shift_norm: True
         resblock_updown: True
-        use_spatial_transformer: False
-        context_dim:
-        condition_key: "nocond" # options {"SpatialRescaler", "first_stage", "nocond"}
+        use_spatial_transformer: True
+        context_dim: 4
+        condition_key: "first_stage" # options {"SpatialRescaler", "first_stage", "nocond"}

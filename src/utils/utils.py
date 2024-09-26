@@ -252,7 +252,7 @@ def crop(img, crop_sz, step):
 def combine(sr_list, num_h, num_w, h, w, patch_size, step, channel=3):
     index=0
     sr_img = np.zeros((h, w, channel), 'float32')
-    print(h, w, num_h, num_w, channel)
+    # print(h, w, num_h, num_w, channel)
     for i in range(num_h):
         for j in range(num_w):
             sr_subim = sr_list[index]
