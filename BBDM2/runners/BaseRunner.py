@@ -113,7 +113,7 @@ class BaseRunner(ABC):
         if self.config.model.__contains__('model_load_path') and self.config.model.model_load_path is not None:
             self.logger(f"load model {self.config.model.model_name} from {self.config.model.model_load_path}")
             model_states = torch.load(self.config.model.model_load_path, map_location='cpu')
-
+            
             self.global_epoch = model_states['epoch']
             self.global_step = model_states['step']
 

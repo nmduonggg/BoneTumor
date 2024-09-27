@@ -10,7 +10,7 @@ training:
 
 testing:
   clip_denoised: False
-  sample_num: 5
+  sample_num: 1
 
 data:
   dataset_name: 'PredOnly'
@@ -37,7 +37,7 @@ model:
   latent_before_quant_conv: False
   normalize_latent: False
   only_load_latent_mean_std: False
-  # model_load_path:  # model checkpoint path
+  model_load_path: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredOnly/LBBDM-f8/checkpoint/top_model_epoch_7.pth # model checkpoint path
   # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
   EMA:
@@ -100,7 +100,7 @@ model:
       sample_step: 256
 
       num_timesteps: 1024 # timesteps
-      eta: 1.0 # DDIM reverse process eta
+      eta: 0.5 # DDIM reverse process eta
       max_var: 1.0 # maximum variance
 
       UNetParams:
