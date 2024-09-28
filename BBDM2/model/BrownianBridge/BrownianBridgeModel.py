@@ -122,8 +122,9 @@ class BrownianBridgeModel(nn.Module):
 
         x0_recon = self.predict_x0_from_objective(x_t, y, t, objective_recon)
         log_dict = {
-            "loss": recloss,
-            "x0_recon": x0_recon
+            "loss": recloss.detach().cpu(),
+            "x0_recon": x0_recon.detach().cpu(),
+            "x0": x0.detach().cpu()
         }
         return recloss, log_dict
 

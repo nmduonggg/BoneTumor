@@ -61,7 +61,7 @@ class CustomAlignedRefineDataset(Dataset):
         pred_folder_cond = os.path.join(dataset_config.dataset_path, 'false_pred')
         
         with open(os.path.join(dataset_config.dataset_path, 'dataset_split.json'), 'r') as f:
-            self.indices = json.load(f)[stage]
+            self.indices = json.load(f)[stage][:100]
             
         with open(os.path.join(dataset_config.dataset_path, 'metadata.json'), 'r') as f:
             data_list = json.load(f)

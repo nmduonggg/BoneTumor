@@ -230,10 +230,10 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
             if additional_info.__contains__('recloss_xy'):
                 self.writer.add_scalar(f'recloss_xy/{stage}', additional_info['recloss_xy'], step)
                 
-        x_latent_recon = additional_info['x0_recon'].to(x.device)
-        x_latent = net.encode(x, type='ori')
+        x_latent_recon = additional_info['x0_recon'].cpu()
+        x_latent = additional_info['x0'].cpu()
         diff = (x_latent_recon - x_latent).pow(2).mean()
-        psnr = (10 * torch.log10(255**2 / diff)).cpu().item()
+        psnr = (10 * torch.log10(255**2 / diff)).item()
         if write and self.is_main_process:
             self.writer.add_scalar(f'psnr/{stage}', psnr, step)
                 
@@ -346,7 +346,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                 opt_idx=0,
                                 stage='val',
                                 write=False)
-            loss_sum += loss.cpu()
+            loss_sum += loss.cpu().detach()
             psnr_sum += psnr
             if len(self.optimizer) > 1:
                 loss = self.loss_fn(net=self.net,
@@ -419,6 +419,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         try:
             accumulate_grad_batches = self.config.training.accumulate_grad_batches
             for epoch in range(start_epoch, self.config.training.n_epochs):
+                # print(torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated())
                 if self.global_step > self.config.training.n_steps:
                     break
 
@@ -441,6 +442,8 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                             'val_psnr': average_psnr,
                         }
                         if self.use_wandb: wandb.log(val_metric)
+                        
+                # print(torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated())
                         
                 #-------------------- save checkpoint
                 if epoch % self.config.training.save_interval == 0 or \
@@ -512,6 +515,12 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                                    os.path.join(self.config.result.ckpt_path, model_ckpt_name))
                                         torch.save(optimizer_scheduler_states,
                                                    os.path.join(self.config.result.ckpt_path, optim_sche_ckpt_name))
+                                        
+                # print(torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated())
+                                        
+                if self.config.training.use_DDP:
+                    dist.barrier()
+                torch.cuda.empty_cache()
                 
                 #--------------- start training
                 pbar = tqdm(train_loader, total=len(train_loader), smoothing=0.01, disable=not self.is_main_process)
@@ -533,6 +542,8 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                             step=self.global_step,
                                             opt_idx=i,
                                             stage='train')
+                        
+                        # print(torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated())
 
                         loss.backward()
                         if self.global_step % accumulate_grad_batches == 0:
@@ -589,9 +600,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                     wandb.log({
                         'train_loss': train_loss,
                         'train_psnr': train_psnr})
-
-                if self.config.training.use_DDP:
-                    dist.barrier()
+                
         except BaseException as e:
             if self.is_main_process == 0:
                 print("exception save model start....")
