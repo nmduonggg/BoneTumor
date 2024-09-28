@@ -136,6 +136,58 @@ class LatentBrownianBridgeModel_Pathology(BrownianBridgeModel):
             x_latent = temp
             out = self.decode(x_latent, type='ori')
             return out
+        
+    @torch.no_grad()
+    def sample_eval(self, x_cond, x_cont, clip_denoised=False, sample_mid_step=False):
+        x_cond_latent = self.encode(x_cond, type='cond')
+        if sample_mid_step:
+            temp, one_step_temp = self.p_sample_loop(y=x_cond_latent,
+                                                     context=self.get_cond_stage_context(x_cont),
+                                                     clip_denoised=clip_denoised,
+                                                     sample_mid_step=sample_mid_step)
+            out_samples = []
+            for i in tqdm(range(len(temp)), initial=0, desc="save output sample mid steps", dynamic_ncols=True,
+                          smoothing=0.01):
+                with torch.no_grad():
+                    out = self.decode(temp[i].detach(), cond=False)
+                out_samples.append(out.to('cpu'))
+
+            one_step_samples = []
+            for i in tqdm(range(len(one_step_temp)), initial=0, desc="save one step sample mid steps",
+                          dynamic_ncols=True,
+                          smoothing=0.01):
+                with torch.no_grad():
+                    out = self.decode(one_step_temp[i].detach(), cond=False)
+                one_step_samples.append(out.to('cpu'))
+            return out_samples, one_step_samples
+        else:
+            temp = self.p_sample_loop_eval(y=x_cond_latent,
+                                      context=self.get_cond_stage_context(x_cont),
+                                      clip_denoised=clip_denoised,
+                                      sample_mid_step=sample_mid_step)
+            x_latent = temp
+            # out = self.decode(x_latent, type='ori')
+            return x_latent
+        
+    @torch.no_grad()
+    def p_sample_loop_eval(self, y, context=None, clip_denoised=True, sample_mid_step=False):
+        if self.condition_key == "nocond":
+            context = None
+        else:
+            context = y if context is None else context
+
+        if sample_mid_step:
+            imgs, one_step_imgs = [y], []
+            for i in tqdm(range(len(self.steps)), desc=f'sampling loop time step', total=len(self.steps)):
+                img, x0_recon = self.p_sample(x_t=imgs[-1], y=y, context=context, i=i, clip_denoised=clip_denoised)
+                imgs.append(img)
+                one_step_imgs.append(x0_recon)
+            return imgs, one_step_imgs
+        else:
+            img = y
+            for i in range(len(self.steps)):
+                img, _ = self.p_sample(x_t=img, y=y, context=context, i=i, clip_denoised=clip_denoised)
+            return img
 
     @torch.no_grad()
     def sample_vqgan(self, x):

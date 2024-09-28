@@ -187,10 +187,12 @@ if __name__=='__main__':
     #----------------------------------------------# processing
     
     done_cases = [f"Case_{i}" for i in []]
+    process_cases = ["Case_9"]
     
     for case_name in os.listdir(args.data_dir):
         if "Case" not in case_name: continue
         if case_name in done_cases: continue
+        if case_name not in process_cases: continue
         
         print(f"==========={case_name}===========")
         case_dir = os.path.join(args.data_dir, case_name)
@@ -201,6 +203,7 @@ if __name__=='__main__':
         
         # original_data_list += data_list
         cnt = 0
+        print("Start from crop_index:", data_list[0]['crop_index'])
         for metadata in tqdm(data_list, total=len(data_list)):
             crop_image_name = metadata['croped_image_filename']
             crop_label_name = metadata['croped_label_filename']

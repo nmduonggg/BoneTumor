@@ -2,6 +2,16 @@ import os
 
 import torch.optim.lr_scheduler
 from torch.utils.data import DataLoader
+import datetime
+import time
+import os
+import traceback
+import wandb
+import numpy as np
+
+import torch
+import torch.distributed as dist
+from torch.utils.data import DataLoader
 
 from PIL import Image
 from Register import Registers
@@ -11,13 +21,16 @@ from model.BrownianBridge.LatentBrownianBridgeModel_PathologyContext import Late
 from runners.DiffusionBasedModelRunners.DiffusionBaseRunner import DiffusionBaseRunner
 from runners.utils import weights_init, get_optimizer, get_dataset, make_dir, get_image_grid, save_single_image
 from tqdm.autonotebook import tqdm
-from torchsummary import summary
+from runners.base.EMA import EMA
+from runners.utils import make_save_dirs, make_dir, get_dataset, remove_file
 
 
 @Registers.runners.register_with_name('BBDMRunner_PathologyContext')
 class BBDMRunner_PathologyContext(DiffusionBaseRunner):
     def __init__(self, config):
         super().__init__(config)
+        self.use_wandb = config.training.wandb
+        if self.use_wandb: self.init_wandb(config)
 
     def initialize_model(self, config):
         if config.model.model_type == "BBDM":
@@ -30,6 +43,15 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
             raise NotImplementedError
         bbdmnet.apply(weights_init)
         return bbdmnet
+    
+    def init_wandb(self, config):
+        print('[INFO] Initiate wandb logging')
+        wandb.login(key=config.training.wandb_key)
+        wandb.init(
+            project="BoneTumor",
+            group = "Phase2_BBDM",
+            name = config['data']['dataset_name']
+        )
 
     def load_model_from_checkpoint(self):
         states = None
@@ -207,7 +229,15 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 self.writer.add_scalar(f'recloss_noise/{stage}', additional_info['recloss_noise'], step)
             if additional_info.__contains__('recloss_xy'):
                 self.writer.add_scalar(f'recloss_xy/{stage}', additional_info['recloss_xy'], step)
-        return loss
+                
+        x_latent_recon = additional_info['x0_recon'].to(x.device)
+        x_latent = net.encode(x, type='ori')
+        diff = (x_latent_recon - x_latent).pow(2).mean()
+        psnr = (10 * torch.log10(255**2 / diff)).cpu().item()
+        if write and self.is_main_process:
+            self.writer.add_scalar(f'psnr/{stage}', psnr, step)
+                
+        return loss, psnr
 
     @torch.no_grad()
     def sample(self, net, batch, sample_path, stage='train'):
@@ -296,3 +326,329 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                         save_single_image(result, result_path_i, f'output_{j}.png', to_normal=to_normal)
                     else:
                         save_single_image(result, result_path, f'{x_name[i]}.png', to_normal=to_normal)
+                        
+                        
+    @torch.no_grad()
+    def validation_epoch(self, val_loader, epoch):
+        self.apply_ema()
+        self.net.eval()
+
+        pbar = tqdm(val_loader, total=len(val_loader), smoothing=0.01, disable=not self.is_main_process)
+        step = 0
+        loss_sum = 0.
+        dloss_sum = 0.
+        psnr_sum = 0.
+        for val_batch in pbar:
+            loss, psnr = self.loss_fn(net=self.net,
+                                batch=val_batch,
+                                epoch=epoch,
+                                step=step,
+                                opt_idx=0,
+                                stage='val',
+                                write=False)
+            loss_sum += loss.cpu()
+            psnr_sum += psnr
+            if len(self.optimizer) > 1:
+                loss = self.loss_fn(net=self.net,
+                                    batch=val_batch,
+                                    epoch=epoch,
+                                    step=step,
+                                    opt_idx=1,
+                                    stage='val',
+                                    write=False)
+                dloss_sum += loss
+            step += 1
+        average_loss = loss_sum / step
+        average_psnr = psnr_sum / step
+        if self.is_main_process:
+            self.writer.add_scalar(f'val_epoch/loss', average_loss, epoch)
+            self.writer.add_scalar(f'val_epoch/psnr', average_psnr, epoch)
+            if len(self.optimizer) > 1:
+                average_dloss = dloss_sum / step
+                self.writer.add_scalar(f'val_dloss_epoch/loss', average_dloss, epoch)
+        self.restore_ema()
+        return average_loss, average_psnr
+                        
+    def train(self):
+        self.logger(self.__class__.__name__)
+
+        train_dataset, val_dataset, test_dataset = get_dataset(self.config.data)
+        train_sampler = None
+        val_sampler = None
+        test_sampler = None
+        if self.config.training.use_DDP:
+            train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+            val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset)
+            test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset)
+            train_loader = DataLoader(train_dataset,
+                                      batch_size=self.config.data.train.batch_size,
+                                      num_workers=8,
+                                      drop_last=True,
+                                      sampler=train_sampler)
+            val_loader = DataLoader(val_dataset,
+                                    batch_size=self.config.data.val.batch_size,
+                                    num_workers=8,
+                                    drop_last=True,
+                                    sampler=val_sampler)
+            test_loader = DataLoader(test_dataset,
+                                     batch_size=self.config.data.test.batch_size,
+                                     num_workers=8,
+                                     drop_last=True,
+                                     sampler=test_sampler)
+        else:
+            train_loader = DataLoader(train_dataset,
+                                      batch_size=self.config.data.train.batch_size,
+                                      shuffle=self.config.data.train.shuffle,
+                                      num_workers=8,
+                                      drop_last=True)
+            val_loader = DataLoader(val_dataset,
+                                    batch_size=self.config.data.val.batch_size,
+                                    shuffle=self.config.data.val.shuffle,
+                                    num_workers=8,
+                                    drop_last=True)
+            test_loader = DataLoader(test_dataset,
+                                     batch_size=self.config.data.test.batch_size,
+                                     shuffle=False,
+                                     num_workers=8,
+                                     drop_last=True)
+
+        epoch_length = len(train_loader)
+        start_epoch = self.global_epoch
+        self.logger(f"start training {self.config.model.model_name} on {self.config.data.dataset_name}, {len(train_loader)} iters per epoch")
+
+        try:
+            accumulate_grad_batches = self.config.training.accumulate_grad_batches
+            for epoch in range(start_epoch, self.config.training.n_epochs):
+                if self.global_step > self.config.training.n_steps:
+                    break
+
+                if self.config.training.use_DDP:
+                    train_sampler.set_epoch(epoch)
+                    val_sampler.set_epoch(epoch)
+                                
+                #----------------- validation
+                if epoch % self.config.training.validation_interval == 0 or (
+                        epoch + 1) == self.config.training.n_epochs:
+                    # if self.is_main_process == 0:
+                    with torch.no_grad():
+                        self.logger("validating epoch...")
+                        average_loss, average_psnr = self.validation_epoch(val_loader, epoch)
+                        torch.cuda.empty_cache()
+                        self.logger("validating epoch success")
+                        
+                        val_metric = {
+                            'val_loss': average_loss,
+                            'val_psnr': average_psnr,
+                        }
+                        if self.use_wandb: wandb.log(val_metric)
+                        
+                #-------------------- save checkpoint
+                if epoch % self.config.training.save_interval == 0 or \
+                        (epoch + 1) == self.config.training.n_epochs or \
+                        self.global_step > self.config.training.n_steps:
+                    if self.is_main_process:
+                        with torch.no_grad():
+                            self.logger("saving latest checkpoint...")
+                            self.on_save_checkpoint(self.net, train_loader, val_loader, epoch, self.global_step)
+                            model_states, optimizer_scheduler_states = self.get_checkpoint_states(stage='epoch_end')
+
+                            # save latest checkpoint
+                            temp = 0
+                            while temp < epoch + 1:
+                                remove_file(os.path.join(self.config.result.ckpt_path, f'latest_model_{temp}.pth'))
+                                remove_file(
+                                    os.path.join(self.config.result.ckpt_path, f'latest_optim_sche_{temp}.pth'))
+                                temp += 1
+                            torch.save(model_states,
+                                       os.path.join(self.config.result.ckpt_path,
+                                                    f'latest_model_{epoch + 1}.pth'))
+                            torch.save(optimizer_scheduler_states,
+                                       os.path.join(self.config.result.ckpt_path,
+                                                    f'latest_optim_sche_{epoch + 1}.pth'))
+                            torch.save(model_states,
+                                       os.path.join(self.config.result.ckpt_path,
+                                                    f'last_model.pth'))
+                            torch.save(optimizer_scheduler_states,
+                                       os.path.join(self.config.result.ckpt_path,
+                                                    f'last_optim_sche.pth'))
+
+                            # save top_k checkpoints
+                            model_ckpt_name = f'top_model_epoch_{epoch + 1}.pth'
+                            optim_sche_ckpt_name = f'top_optim_sche_epoch_{epoch + 1}.pth'
+
+                            if self.config.args.save_top:
+                                print("save top model start...")
+                                top_key = 'top'
+                                if top_key not in self.topk_checkpoints:
+                                    print('top key not in topk_checkpoints')
+                                    self.topk_checkpoints[top_key] = {"loss": average_loss,
+                                                                      'psnr': average_psnr,
+                                                                      'model_ckpt_name': model_ckpt_name,
+                                                                      'optim_sche_ckpt_name': optim_sche_ckpt_name}
+
+                                    print(f"saving top checkpoint: average_loss={average_loss} average_psnr={average_psnr} epoch={epoch + 1}")
+                                    torch.save(model_states,
+                                               os.path.join(self.config.result.ckpt_path, model_ckpt_name))
+                                    torch.save(optimizer_scheduler_states,
+                                               os.path.join(self.config.result.ckpt_path, optim_sche_ckpt_name))
+                                else:
+                                    # if average_loss < self.topk_checkpoints[top_key]["loss"]:
+                                    if average_psnr < self.topk_checkpoints[top_key]['psnr']:
+                                        print("remove " + self.topk_checkpoints[top_key]["model_ckpt_name"])
+                                        remove_file(os.path.join(self.config.result.ckpt_path,
+                                                                 self.topk_checkpoints[top_key]['model_ckpt_name']))
+                                        remove_file(os.path.join(self.config.result.ckpt_path,
+                                                                 self.topk_checkpoints[top_key]['optim_sche_ckpt_name']))
+
+                                        print(
+                                            f"saving top checkpoint: average_loss={average_loss} average_psnr={average_psnr} epoch={epoch + 1}")
+
+                                        self.topk_checkpoints[top_key] = {"loss": average_loss,
+                                                                          "psnr": average_psnr,
+                                                                          'model_ckpt_name': model_ckpt_name,
+                                                                          'optim_sche_ckpt_name': optim_sche_ckpt_name}
+
+                                        torch.save(model_states,
+                                                   os.path.join(self.config.result.ckpt_path, model_ckpt_name))
+                                        torch.save(optimizer_scheduler_states,
+                                                   os.path.join(self.config.result.ckpt_path, optim_sche_ckpt_name))
+                
+                #--------------- start training
+                pbar = tqdm(train_loader, total=len(train_loader), smoothing=0.01, disable=not self.is_main_process)
+                self.global_epoch = epoch
+                start_time = time.time()
+                
+                train_losses = []
+                train_psnrs = []
+                for train_batch in pbar:
+                    self.global_step += 1
+                    self.net.train()
+
+                    losses = []
+                    for i in range(len(self.optimizer)):
+                        # pdb.set_trace()
+                        loss, psnr = self.loss_fn(net=self.net,
+                                            batch=train_batch,
+                                            epoch=epoch,
+                                            step=self.global_step,
+                                            opt_idx=i,
+                                            stage='train')
+
+                        loss.backward()
+                        if self.global_step % accumulate_grad_batches == 0:
+                            self.optimizer[i].step()
+                            self.optimizer[i].zero_grad()
+                            if self.scheduler is not None:
+                                self.scheduler[i].step(loss)
+                        if self.config.training.use_DDP:
+                            dist.reduce(loss, dst=0, op=dist.ReduceOp.SUM)
+                        losses.append(loss.detach().cpu().mean())
+                        train_losses.append(loss.detach().cpu().mean())
+                        train_psnrs.append(psnr)
+
+                    if self.use_ema and self.global_step % (self.update_ema_interval*accumulate_grad_batches) == 0:
+                        self.step_ema()
+
+                    if len(self.optimizer) > 1:
+                        pbar.set_description(
+                            (
+                                f'Epoch: [{epoch + 1} / {self.config.training.n_epochs}] '
+                                f'iter: {self.global_step} loss-1: {losses[0]:.4f} loss-2: {losses[1]:.4f}'
+                            )
+                        )
+                    else:
+                        pbar.set_description(
+                            (
+                                f'Epoch: [{epoch + 1} / {self.config.training.n_epochs}] '
+                                f'iter: {self.global_step} loss: {losses[0]:.4f}'
+                            )
+                        )
+
+                    with torch.no_grad():
+                        if self.global_step % 50 == 0:
+                            val_batch = next(iter(val_loader))
+                            self.validation_step(val_batch=val_batch, epoch=epoch, step=self.global_step)
+
+                        # if self.global_step % int(self.config.training.sample_interval * epoch_length) == 0:
+                        if self.global_step % int(self.config.training.sample_interval) == 0:
+                            # val_batch = next(iter(val_loader))
+                            # self.validation_step(val_batch=val_batch, epoch=epoch, step=self.global_step)
+
+                            if self.is_main_process:
+                                val_batch = next(iter(val_loader))
+                                self.sample_step(val_batch=val_batch, train_batch=train_batch)
+                                torch.cuda.empty_cache()
+
+                end_time = time.time()
+                elapsed_rounded = int(round((end_time-start_time)))
+                self.logger("training time: " + str(datetime.timedelta(seconds=elapsed_rounded)))
+                
+                train_loss = np.mean(train_losses)
+                train_psnr = np.mean(train_psnrs)
+                if self.use_wandb:
+                    wandb.log({
+                        'train_loss': train_loss,
+                        'train_psnr': train_psnr})
+
+                if self.config.training.use_DDP:
+                    dist.barrier()
+        except BaseException as e:
+            if self.is_main_process == 0:
+                print("exception save model start....")
+                print(self.__class__.__name__)
+                model_states, optimizer_scheduler_states = self.get_checkpoint_states(stage='exception')
+                torch.save(model_states,
+                           os.path.join(self.config.result.ckpt_path, f'last_model.pth'))
+                torch.save(optimizer_scheduler_states,
+                           os.path.join(self.config.result.ckpt_path, f'last_optim_sche.pth'))
+
+                print("exception save model success!")
+
+            print('str(Exception):\t', str(Exception))
+            print('str(e):\t\t', str(e))
+            print('repr(e):\t', repr(e))
+            print('traceback.print_exc():')
+            traceback.print_exc()
+            print('traceback.format_exc():\n%s' % traceback.format_exc())
+
+    @torch.no_grad()
+    def test(self):
+        train_dataset, val_dataset, test_dataset = get_dataset(self.config.data)
+        if test_dataset is None:
+            test_dataset = val_dataset
+        # test_dataset = val_dataset
+        if self.config.training.use_DDP:
+            test_sampler = torch.utils.data.distributed.DistributedSampler(test_dataset)
+            test_loader = DataLoader(test_dataset,
+                                     batch_size=self.config.data.test.batch_size,
+                                     shuffle=False,
+                                     num_workers=1,
+                                     drop_last=True,
+                                     sampler=test_sampler)
+        else:
+            test_loader = DataLoader(test_dataset,
+                                     batch_size=self.config.data.test.batch_size,
+                                     shuffle=False,
+                                     num_workers=1,
+                                     drop_last=True)
+
+        if self.use_ema:
+            self.apply_ema()
+
+        self.net.eval()
+        if self.config.args.sample_to_eval:
+            sample_path = self.config.result.sample_to_eval_path
+            if self.config.training.use_DDP:
+                self.sample_to_eval(self.net.module, test_loader, sample_path)
+            else:
+                self.sample_to_eval(self.net, test_loader, sample_path)
+        else:
+            test_iter = iter(test_loader)
+            for i in tqdm(range(1), initial=0, dynamic_ncols=True, smoothing=0.01):
+                test_batch = next(test_iter)
+                sample_path = os.path.join(self.config.result.sample_path, str(i))
+                if self.config.training.use_DDP:
+                    self.sample(self.net.module, test_batch, sample_path, stage='test')
+                else:
+                    self.sample(self.net, test_batch, sample_path, stage='test')
+

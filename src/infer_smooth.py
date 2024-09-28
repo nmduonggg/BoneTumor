@@ -142,7 +142,7 @@ def index2color(idx, patch, color_map):
 
 def get_nonwhite_mask(image):
     grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    _, thresholded = cv2.threshold(grayscale, 240, 255, cv2.THRESH_BINARY)
+    _, thresholded = cv2.threshold(grayscale, 250, 255, cv2.THRESH_BINARY)
     mask = (thresholded != 255).astype(int)
     
     return mask
@@ -227,8 +227,12 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
         output[mask] = color
         
     prediction = cv2.resize(output, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-    img_mask = get_nonwhite_mask(img)
-    prediction = prediction * img_mask + np.ones_like(prediction)*255*(1-img_mask)
+    # img_mask = np.expand_dims(get_nonwhite_mask(img), axis=-1)
+    
+    label = cv2.resize(open_img(label_path), (img.shape[1], img.shape[0]), cv2.INTER_NEAREST)
+    label_mask = np.expand_dims(get_nonwhite_mask(label), axis=-1)
+        
+    prediction = prediction * label_mask + np.ones_like(prediction)*255*(1-label_mask)
     prediction = prediction.astype(np.uint8)
     
     class_counts = read_percent_from_color(prediction)
@@ -248,13 +252,11 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
 
     plt.imsave(os.path.join(outdir, f"{infer_name.split('.')[0]}_blend.png"), blend_im.astype(np.uint8))
     print("Save prediction done")
-        
-    print("[RESULT]")
     for i in range(6):
         write2file(f"{labels[i+1]} - {round(class_percent[i]*100, 1)}%", target_file, 'a')
         image_dict = add2dict(image_dict, labels[i+1], class_percent[i])
             
-    huvos_ratio = 1 - class_counts[0] / np.sum(class_counts[:5] + 1e-9) 
+    huvos_ratio = 1 - class_counts[0] / (np.sum(class_counts[:5]) + 1e-9) 
     
     if class_percent[-1] >= 0.99:
         huvos_ratio = None
@@ -263,7 +265,7 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
         write2file(f'total_necrosis: {round(huvos_ratio*100, 1)}%', target_file, 'a')
     else:
         write2file('total_necrosis: N/A', target_file, 'a')
-    write2file("--------------\n", target_file, 'a')
+    write2file("--------------", target_file, 'a')
     
     return huvos_ratio, image_dict
 
@@ -282,7 +284,7 @@ def huvos_classify(huvos_ratio):
 
 def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
     huvos_case = []
-    label_names = [n for n in os.listdir(label_dir) if ('.jpg' in n or '.png' in n)]
+    label_names = [n for n in os.listdir(label_folder) if ('.jpg' in n or '.png' in n)]
     for label_name in label_names:
         if "x8" in label_name:
             image_name = label_name.split("-x8")[0] + '.png'
@@ -296,8 +298,6 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
         image_dict = {}
         write2file(image_name, target_file, 'a')
         
-        print("CHECKPOINT")
-        
         huvos_ratio, image_dict = infer(infer_path, label_path,
                                         target_file, outdir, image_dict)
         if huvos_ratio is not None:
@@ -309,7 +309,8 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
 
 
 if __name__=='__main__':
-    done_cases = [f"Case_{n}" for n in []]
+    done_cases = [f"Case_{n}" for n in [2, 3, 6, 8, 9, 11]]
+    cases = [f"Case_{n}" for n in range(1, 11)]
     metadatas = {}
     
     outdir = args.outdir
@@ -317,9 +318,17 @@ if __name__=='__main__':
     label_dir = args.labels_dir
     print("Saving to dir:", outdir)
     
+    pred_dict_path = os.path.join(outdir, 'pred_dict.json')
+    if os.path.isfile(pred_dict_path):
+        with open(pred_dict_path, 'r') as f:
+            metadatas = json.load(f)
+            print("Load metadatas from:", pred_dict_path)
     
     for case in os.listdir(args.labels_dir):
         if case in done_cases: continue
+        if case not in cases: continue
+        
+        print("="*5 + f" {case} " + "="*5)
         
         case_label_folder = os.path.join(label_dir, case)
         case_image_folder = os.path.join(image_dir, case)
@@ -339,7 +348,7 @@ if __name__=='__main__':
         write2file(f"Huvos: {huvos_classify(huvos_case)}", target_file, 'a')
         
         metadatas[case] = case_dict
-        with open(os.path.join(outdir, 'gt_dict.json'), 'w') as f:
+        with open(os.path.join(outdir, 'pred_dict.json'), 'w') as f:
             json.dump(metadatas, f, indent=4)
         
             

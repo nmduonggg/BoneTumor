@@ -4,16 +4,18 @@ training:
   n_epochs: 100
   n_steps: 2000000
   save_interval: 1
-  sample_interval: 1000
+  sample_interval: 2000
   validation_interval: 1
   accumulate_grad_batches: 4
+  wandb: False
+  wandb_key: ''
 
 testing:
   clip_denoised: False
   sample_num: 1
 
 data:
-  dataset_name: 'PredOnly'
+  dataset_name: 'PredIm-2'
   dataset_type: 'custom_aligned_refine'
   dataset_config:
     dataset_path: '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
@@ -37,7 +39,7 @@ model:
   latent_before_quant_conv: False
   normalize_latent: False
   only_load_latent_mean_std: False
-  model_load_path: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredOnly/LBBDM-f8/checkpoint/top_model_epoch_7.pth # model checkpoint path
+  # model_load_path: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredOnly/LBBDM-f8/checkpoint/top_model_epoch_7.pth # model checkpoint path
   # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
   EMA:
@@ -92,15 +94,15 @@ model:
 
     params:
       mt_type: 'linear' # options {'linear', 'sin'}
-      objective: 'grad' # options {'grad', 'noise', 'ysubx'}
-      loss_type: 'l1' # options {'l1', 'l2'}
+      objective: 'noise' # options {'grad', 'noise', 'ysubx'}
+      loss_type: 'l2' # options {'l1', 'l2'}
 
       skip_sample: True
       sample_type: 'linear' # options {"linear", "sin"}
-      sample_step: 256
+      sample_step: 200
 
-      num_timesteps: 1024 # timesteps
-      eta: 0.5 # DDIM reverse process eta
+      num_timesteps: 1000 # timesteps
+      eta: 1.0 # DDIM reverse process eta
       max_var: 1.0 # maximum variance
 
       UNetParams:
