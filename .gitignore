@@ -1,11 +1,13 @@
 pretrained/*
-RAW/*
 src/infer
 src/exp
 src/wandb
 MONAI/*
 RAW/REAL_WSIs
 RAW/*/*.jpg
+RAW/*/*.png
+RAW/pretrained_weights
+RAW/process/openslide
 src/weights
 wandb
 **/__pycache__
