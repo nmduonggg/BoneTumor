@@ -50,7 +50,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         wandb.init(
             project="BoneTumor",
             group = "Phase2_BBDM",
-            name = config['data']['dataset_name']
+            name = config.data.dataset_name
         )
 
     def load_model_from_checkpoint(self):
@@ -67,8 +67,8 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 self.net.ori_latent_std = states['ori_latent_std'].to(self.config.training.device[0])
                 self.net.cond_latent_mean = states['cond_latent_mean'].to(self.config.training.device[0])
                 self.net.cond_latent_std = states['cond_latent_std'].to(self.config.training.device[0])
-                self.net.cont_latent_std = states['cont_latent_std'].to(self.config.training.device[0])
-                self.net.cont_latent_mean = states['cont_latent_mean'].to(self.config.training.device[0])
+                # self.net.cont_latent_std = states['cont_latent_std'].to(self.config.training.device[0])
+                # self.net.cont_latent_mean = states['cont_latent_mean'].to(self.config.training.device[0])
             else:
                 if self.config.args.train:
                     self.get_latent_mean_std()
@@ -102,15 +102,15 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 model_states['ori_latent_std'] = self.net.module.ori_latent_std
                 model_states['cond_latent_mean'] = self.net.module.cond_latent_mean
                 model_states['cond_latent_std'] = self.net.module.cond_latent_std
-                model_states['cont_latent_mean'] = self.net.module.cont_latent_mean
-                model_states['cont_latent_std'] = self.net.module.cont_latent_std
+                # model_states['cont_latent_mean'] = self.net.module.cont_latent_mean
+                # model_states['cont_latent_std'] = self.net.module.cont_latent_std
             else:
                 model_states['ori_latent_mean'] = self.net.ori_latent_mean
                 model_states['ori_latent_std'] = self.net.ori_latent_std
                 model_states['cond_latent_mean'] = self.net.cond_latent_mean
                 model_states['cond_latent_std'] = self.net.cond_latent_std
-                model_states['cont_latent_mean'] = self.net.cont_latent_mean
-                model_states['cont_latent_std'] = self.net.cont_latent_std
+                # model_states['cont_latent_mean'] = self.net.cont_latent_mean
+                # model_states['cont_latent_std'] = self.net.cont_latent_std
         return model_states, optimizer_scheduler_states
 
     def get_latent_mean_std(self):
@@ -137,17 +137,17 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
 
             x_latent = self.net.encode(x, type='ori', normalize=False)
             x_cond_latent = self.net.encode(x_cond, type='cond', normalize=False)
-            x_cont_latent = self.net.encoder(x_cont, type='cont', normalize=False)
+            # x_cont_latent = self.net.encoder(x_cont, type='cont', normalize=False)
             x_mean = x_latent.mean(axis=[0, 2, 3], keepdim=True)
             total_ori_mean = x_mean if total_ori_mean is None else x_mean + total_ori_mean
 
             x_cond_mean = x_cond_latent.mean(axis=[0, 2, 3], keepdim=True)
             total_cond_mean = x_cond_mean if total_cond_mean is None else x_cond_mean + total_cond_mean
             
-            x_cont_mean = x_cont_latent.mean(axis=[0,2,3], keepdim=True)
-            total_cont_mean = x_cont_mean if total_cont_mean is None else x_cont_mean + total_cont_mean
+            # x_cont_mean = x_cont_latent.mean(axis=[0,2,3], keepdim=True)
+            # total_cont_mean = x_cont_mean if total_cont_mean is None else x_cont_mean + total_cont_mean
             
-            return total_ori_mean, total_cond_mean, total_cont_mean
+            return total_ori_mean, total_cond_mean
 
         def calc_var(batch, ori_latent_mean=None, cond_latent_mean=None, cont_latent_mean=None,
                     total_ori_var=None, total_cond_var=None, total_cont_var=None):
@@ -158,17 +158,17 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
 
             x_latent = self.net.encode(x, type='ori', normalize=False)
             x_cond_latent = self.net.encode(x_cond, type='cond', normalize=False)
-            x_cont_latent = self.net.encode(x_cont, type='cont', normalize=False)
+            # x_cont_latent = self.net.encode(x_cont, type='cont', normalize=False)
             x_var = ((x_latent - ori_latent_mean) ** 2).mean(axis=[0, 2, 3], keepdim=True)
             total_ori_var = x_var if total_ori_var is None else x_var + total_ori_var
 
             x_cond_var = ((x_cond_latent - cond_latent_mean) ** 2).mean(axis=[0, 2, 3], keepdim=True)
             total_cond_var = x_cond_var if total_cond_var is None else x_cond_var + total_cond_var
             
-            x_cont_var = ((x_cont_latent - cont_latent_mean) ** 2).mean(axis=[0, 2, 3], keepdim=True)
-            total_cont_var = x_cont_var if total_cont_var is None else x_cont_var + total_cont_var
+            # x_cont_var = ((x_cont_latent - cont_latent_mean) ** 2).mean(axis=[0, 2, 3], keepdim=True)
+            # total_cont_var = x_cont_var if total_cont_var is None else x_cont_var + total_cont_var
             
-            return total_ori_var, total_cond_var, total_cont_var
+            return total_ori_var, total_cond_var
 
         self.logger(f"start calculating latent mean")
         batch_count = 0
@@ -176,7 +176,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
             # if batch_count >= max_batch_num:
             #     break
             batch_count += 1
-            total_ori_mean, total_cond_mean, total_cont_mean = calc_mean(train_batch, total_ori_mean, total_cond_mean, total_cont_mean)
+            total_ori_mean, total_cond_mean = calc_mean(train_batch, total_ori_mean, total_cond_mean, total_cont_mean)
 
         ori_latent_mean = total_ori_mean / batch_count
         self.net.ori_latent_mean = ori_latent_mean
@@ -184,8 +184,8 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         cond_latent_mean = total_cond_mean / batch_count
         self.net.cond_latent_mean = cond_latent_mean
 
-        cont_latent_mean = total_cont_mean / batch_count
-        self.net.cont_latent_mean = cont_latent_mean
+        # cont_latent_mean = total_cont_mean / batch_count
+        # self.net.cont_latent_mean = cont_latent_mean.cpu()
 
         self.logger(f"start calculating latent std")
         batch_count = 0
@@ -193,28 +193,27 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
             # if batch_count >= max_batch_num:
             #     break
             batch_count += 1
-            total_ori_var, total_cond_var, total_cont_var = calc_var(train_batch,
+            total_ori_var, total_cond_var = calc_var(train_batch,
                                                      ori_latent_mean=ori_latent_mean,
                                                      cond_latent_mean=cond_latent_mean,
-                                                     cont_latent_mean=cont_latent_mean,
                                                      total_ori_var=total_ori_var,
-                                                     total_cond_var=total_cond_var,
-                                                     total_cont_var=total_cont_var)
+                                                     total_cond_var=total_cond_var,)
             # break
 
         ori_latent_var = total_ori_var / batch_count
         cond_latent_var = total_cond_var / batch_count
-        cont_latent_var = total_cont_var / batch_count
+        # cont_latent_var = total_cont_var / batch_count
 
         self.net.ori_latent_std = torch.sqrt(ori_latent_var)
         self.net.cond_latent_std = torch.sqrt(cond_latent_var)
-        self.net.cont_latent_std = torch.sqrt(cont_latent_var)
+        # self.net.cont_latent_std = torch.sqrt(cont_latent_var)
+        
         self.logger(self.net.ori_latent_mean)
         self.logger(self.net.ori_latent_std)
         self.logger(self.net.cond_latent_mean)
         self.logger(self.net.cond_latent_std)
-        self.logger(self.net.cont_latent_mean)
-        self.logger(self.net.cont_latent_std)
+        # self.logger(self.net.cont_latent_mean)
+        # self.logger(self.net.cont_latent_std)
 
     def loss_fn(self, net, batch, epoch, step, opt_idx=0, stage='train', write=True):
         (x, x_name), (x_cond, x_cond_name), (x_cont, x_cont_name) = batch
@@ -223,6 +222,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         x_cont = x_cont.to(self.config.training.device[0])
 
         loss, additional_info = net(x, x_cond, context=x_cont)
+        
         if write and self.is_main_process:
             self.writer.add_scalar(f'loss/{stage}', loss, step)
             if additional_info.__contains__('recloss_noise'):
@@ -234,8 +234,11 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         x_latent = additional_info['x0'].cpu()
         diff = (x_latent_recon - x_latent).pow(2).mean()
         psnr = (10 * torch.log10(255**2 / diff)).item()
+        
         if write and self.is_main_process:
             self.writer.add_scalar(f'psnr/{stage}', psnr, step)
+        
+        del additional_info, x, x_cond, x_cont
                 
         return loss, psnr
 
@@ -367,6 +370,9 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 average_dloss = dloss_sum / step
                 self.writer.add_scalar(f'val_dloss_epoch/loss', average_dloss, epoch)
         self.restore_ema()
+        
+        del loss
+        
         return average_loss, average_psnr
                         
     def train(self):
@@ -434,7 +440,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                     with torch.no_grad():
                         self.logger("validating epoch...")
                         average_loss, average_psnr = self.validation_epoch(val_loader, epoch)
-                        torch.cuda.empty_cache()
+                        # torch.cuda.empty_cache()
                         self.logger("validating epoch success")
                         
                         val_metric = {
@@ -495,8 +501,8 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                     torch.save(optimizer_scheduler_states,
                                                os.path.join(self.config.result.ckpt_path, optim_sche_ckpt_name))
                                 else:
-                                    # if average_loss < self.topk_checkpoints[top_key]["loss"]:
-                                    if average_psnr < self.topk_checkpoints[top_key]['psnr']:
+                                    if average_loss < self.topk_checkpoints[top_key]["loss"]:
+                                    # if average_psnr < self.topk_checkpoints[top_key]['psnr']:
                                         print("remove " + self.topk_checkpoints[top_key]["model_ckpt_name"])
                                         remove_file(os.path.join(self.config.result.ckpt_path,
                                                                  self.topk_checkpoints[top_key]['model_ckpt_name']))
@@ -520,7 +526,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                         
                 if self.config.training.use_DDP:
                     dist.barrier()
-                torch.cuda.empty_cache()
+                # torch.cuda.empty_cache()
                 
                 #--------------- start training
                 pbar = tqdm(train_loader, total=len(train_loader), smoothing=0.01, disable=not self.is_main_process)
@@ -574,21 +580,21 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                 f'iter: {self.global_step} loss: {losses[0]:.4f}'
                             )
                         )
-
+                    # torch.cuda.empty_cache()
                     with torch.no_grad():
                         if self.global_step % 50 == 0:
                             val_batch = next(iter(val_loader))
                             self.validation_step(val_batch=val_batch, epoch=epoch, step=self.global_step)
 
-                        # if self.global_step % int(self.config.training.sample_interval * epoch_length) == 0:
-                        if self.global_step % int(self.config.training.sample_interval) == 0:
+                        if self.global_step % int(self.config.training.sample_interval * epoch_length) == 0:
+                        # if self.global_step % int(self.config.training.sample_interval) == 0:
                             # val_batch = next(iter(val_loader))
                             # self.validation_step(val_batch=val_batch, epoch=epoch, step=self.global_step)
 
                             if self.is_main_process:
                                 val_batch = next(iter(val_loader))
                                 self.sample_step(val_batch=val_batch, train_batch=train_batch)
-                                torch.cuda.empty_cache()
+                                # torch.cuda.empty_cache()
 
                 end_time = time.time()
                 elapsed_rounded = int(round((end_time-start_time)))
@@ -596,10 +602,10 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 
                 train_loss = np.mean(train_losses)
                 train_psnr = np.mean(train_psnrs)
+                train_metrics = {'train_loss': train_loss,
+                                 'train_psnr': train_psnr}
                 if self.use_wandb:
-                    wandb.log({
-                        'train_loss': train_loss,
-                        'train_psnr': train_psnr})
+                    wandb.log(train_metrics)
                 
         except BaseException as e:
             if self.is_main_process == 0:

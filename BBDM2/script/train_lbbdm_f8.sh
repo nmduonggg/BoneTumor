@@ -3,4 +3,4 @@ python3 main.py \
     --train \
     --sample_at_start \
     --save_top \
-    --gpu_ids 0 
+    --gpu_ids 1

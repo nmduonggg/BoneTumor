@@ -121,15 +121,13 @@ class SpatialRescaler(nn.Module):
         if self.remap_output:
             print(f'Spatial Rescaler mapping from {in_channels} to {out_channels} channels after resizing.')
             self.channel_mapper = nn.Sequential(
-                nn.Conv2d(in_channels,out_channels,3, 1, 1, bias=bias),
-                nn.ReLU(), 
+                nn.Conv2d(in_channels, out_channels, 3, 1, 1, bias=bias), nn.ReLU(), 
                 nn.Conv2d(out_channels, out_channels, 3, 1, 1, bias=bias))
 
     def forward(self,x):
         
         if self.remap_output:
             x = self.channel_mapper(x)
-        
         for stage in range(self.n_stages):
             x = self.interpolator(x, scale_factor=self.multiplier)
         
