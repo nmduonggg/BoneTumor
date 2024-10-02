@@ -1,4 +1,4 @@
-name: BBDM
+name: BBDM_test
 channels:
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
@@ -84,12 +84,12 @@ dependencies:
     - tensorboard-plugin-wit==1.8.1
     - threadpoolctl==3.1.0
     - tifffile==2023.2.27
-    - tokenizers==0.13.2
-    - torch==1.12.1+cu113
-    - torchaudio==0.12.1+cu113
+    - tokenizers
+    - torch
+    - torchaudio
     - torchmetrics==0.11.1
     - torchsummary==1.5.1
-    - torchvision==0.13.1+cu113
+    - torchvision
     - tqdm==4.64.1
     - transformers==4.26.1
     - typing-extensions==4.5.0

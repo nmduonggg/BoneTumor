@@ -325,7 +325,7 @@ if __name__=='__main__':
             print("Load metadatas from:", pred_dict_path)
     
     for case in os.listdir(args.labels_dir):
-        if case in done_cases: continue
+        # if case in done_cases: continue
         if case not in cases: continue
         
         print("="*5 + f" {case} " + "="*5)
