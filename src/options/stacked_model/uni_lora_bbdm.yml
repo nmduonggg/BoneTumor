@@ -54,7 +54,7 @@ path:
   # pretrain_model: /home/admin/duongnguyen/BoneTumor/src/weights/small_orig.pt
   # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_segment/UNI/_best.pt
   # pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls/UNI_lora_cls/_best.pt
-  pretrain_model: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp_cls_256_cls_retrain_with9/UNI_lora_cls/_best.pt
+  pretrain_model: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/exp/UNI_lora_cls
   # pretrain_model: ~
 
 train:
@@ -74,34 +74,34 @@ logger:
   print_freq: 20000
   save_checkpoint_freq: !!float 20000
 
+# Latent Brownian Bridge Diffusion Model Template(Latent Space)
 bbdm:
-  # Latent Brownian Bridge Diffusion Model Template(Latent Space)
   runner: 'BBDMRunner_PathologyContext'
   training:
     n_epochs: 100
     n_steps: 2000000
     save_interval: 1
-    sample_interval: 2000
+    sample_interval: 1
     validation_interval: 1
     accumulate_grad_batches: 4
-    wandb: False
-    wandb_key: ''
+    wandb: True
+    wandb_key: '60fd0a73c2aefc531fa6a3ad0d689e3a4507f51c'
 
   testing:
     clip_denoised: False
     sample_num: 1
 
   data:
-    dataset_name: 'PredIm-2'
+    dataset_name: 'PredIm-2-ysubx'
     dataset_type: 'custom_aligned_refine'
     dataset_config:
-      dataset_path: '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
+      dataset_path: '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
       image_size: 256
       channels: 3
       to_normal: True
       flip: True
     train:
-      batch_size: 8
+      batch_size: 4
       shuffle: True
     val:
       batch_size: 8
@@ -116,7 +116,7 @@ bbdm:
     latent_before_quant_conv: False
     normalize_latent: False
     only_load_latent_mean_std: False
-    # model_load_path: /mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredOnly/LBBDM-f8/checkpoint/top_model_epoch_7.pth # model checkpoint path
+    # model_load_path: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-2/LBBDM-f8/checkpoint/top_model_epoch_10.pth # model checkpoint path
     # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
     EMA:
@@ -171,16 +171,16 @@ bbdm:
 
       params:
         mt_type: 'linear' # options {'linear', 'sin'}
-        objective: 'noise' # options {'grad', 'noise', 'ysubx'}
-        loss_type: 'l2' # options {'l1', 'l2'}
+        objective: 'grad' # options {'grad', 'noise', 'ysubx'}
+        loss_type: 'l1' # options {'l1', 'l2'}
 
         skip_sample: True
         sample_type: 'linear' # options {"linear", "sin"}
-        sample_step: 200
+        sample_step: 256
 
-        num_timesteps: 1000 # timesteps
-        eta: 1.0 # DDIM reverse process eta
-        max_var: 1.0 # maximum variance
+        num_timesteps: 1024 # timesteps
+        eta: 0.8 # DDIM reverse process eta
+        max_var: 0.8 # maximum variance
 
         UNetParams:
           image_size: 32
@@ -205,7 +205,3 @@ bbdm:
           use_spatial_transformer: True
           context_dim: 4
           condition_key: "SpatialRescaler" # options {"SpatialRescaler", "first_stage", "nocond"}
-
-is_train: false
-is_test: true
-wandb: false

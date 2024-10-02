@@ -7,7 +7,6 @@ import torch.nn.functional as F
 import timm
 import loralib as lora
 from huggingface_hub import hf_hub_download
-from peft import get_peft_model, LoraConfig, TaskType
 import numpy as np
 
 from model import TransformerReorder, UNI_lora_cls

@@ -9,8 +9,8 @@ import torch.nn.functional as F
 import timm
 import loralib as lora
 from huggingface_hub import hf_hub_download
-from peft import get_peft_model, LoraConfig, TaskType
 import numpy as np
+import data.utils as data_utils
 
 from model import TransformerReorder, UNI_lora_cls
 import BBDM2.model.BrownianBridge.LatentBrownianBridgeModel_PathologyContext as LBBDM
@@ -43,10 +43,14 @@ class StackedDiffusionModel(nn.Module):
         out1 = self._combine_tensor(
                         patch_seq, num_h, num_w, h, w, self.patch_size, self.patch_size,
                         batch_size=batch_size, channel=3)
+        
+        out1 = data_utils.denormalize_tensor(out1)
+        x = data_utils.denormalize_tensor(x)
+        
         x_cond = F.interpolate(out1, (self.phase2_size, self.phase2_size))
         x_cont = F.interpolate(x, (self.phase2_size, self.phase2_size))
         
-        out = self.phase2_refiner.sample(x_cond, x_cont, clip_denoised=self.option.bbdm.clip_denoised)
+        out = self.phase2_refiner.sample_infer(x_cond, x_cont, clip_denoised=self.option.bbdm.clip_denoised)
         
         return out
     
@@ -107,7 +111,4 @@ class StackedDiffusionModel(nn.Module):
         
     def load_state_dict(self, phase1_dict, phase2_dict, strict=True):
         self.phase1_classifier.load_state_dict(phase1_dict, strict=strict)
-        self.phase2_refiner.load_state_dict(phase2_dict, strict=strict)
-        
-        return
-            
+        self.phase2_refiner.load_state_dict(phase2_dict['model'], strict=strict)
