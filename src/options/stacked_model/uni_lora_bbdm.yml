@@ -1,10 +1,10 @@
-name: UNI_lora_cls
+name: stacked_bbdm
 gpu_ids: [0]
 job_dir: exp_cls_256_cls_retrain_with9
 token: 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
 
 network_G:
-  which_model_G: uni_lora_cls
+  which_model_G: stacked_bbdm
   in_nc: 3
   out_nc: 7
 
@@ -73,6 +73,8 @@ train:
 logger:
   print_freq: 20000
   save_checkpoint_freq: !!float 20000
+
+###---------------------------------------###
 
 # Latent Brownian Bridge Diffusion Model Template(Latent Space)
 bbdm:

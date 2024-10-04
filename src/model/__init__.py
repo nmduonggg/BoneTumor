@@ -5,6 +5,7 @@ from .ViT_baseline import ViT_baseline
 from .ResNet_baseline import ResNet_baseline
 from .Transformer_reorder import TransformerReorder
 from .Stacked_model import StackedModel
+from .StackedDiffusion_model import StackedDiffusionModel
 
 def create_model(opt):
     if opt['network_G']['which_model_G'] == 'uni_lora_cls':
@@ -18,5 +19,7 @@ def create_model(opt):
         return TransformerReorder()
     elif opt['network_G']['which_model_G'] == 'stacked_model':
         return StackedModel(opt['network_G']['out_nc'])
+    elif opt['network_G']['which_model_G'] == 'stacked_bbdm':
+        return StackedDiffusionModel(opt)
     else:
         raise NotImplementedError('Model [{:s}] is not recognized.'.format(opt['network_G']['which_model_G']))

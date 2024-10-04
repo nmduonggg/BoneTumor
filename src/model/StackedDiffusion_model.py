@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append('../BBDM2')
+sys.path.append('/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2')
 
 import torch  
 import torch.nn as nn  
@@ -13,14 +13,15 @@ import numpy as np
 import data.utils as data_utils
 
 from model import TransformerReorder, UNI_lora_cls
-import BBDM2.model.BrownianBridge.LatentBrownianBridgeModel_PathologyContext as LBBDM
+from model.bbdm.BrownianBridge.LatentBrownianBridgeModel_PathologyContext import LatentBrownianBridgeModel_Pathology as LBBDM
 
 class StackedDiffusionModel(nn.Module):
     def __init__(self, option):
         super(StackedDiffusionModel, self).__init__()
+        self.option=option
+        self.phase1_classifier = UNI_lora_cls(option['network_G']['out_nc'])
         
-        self.phase1_classifier = UNI_lora_cls(option['out_nc'])
-        self.phase2_refiner = LBBDM(option.bbdm)
+        self.phase2_refiner = LBBDM(option['bbdm']['model'])
         self.patch_size = 256
         self.phase2_size = 256
         self.color_map = [
