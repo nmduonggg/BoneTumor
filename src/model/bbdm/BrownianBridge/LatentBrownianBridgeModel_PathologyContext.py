@@ -20,13 +20,6 @@ class LatentBrownianBridgeModel_Pathology(BrownianBridgeModel):
     def __init__(self, model_config):
         super().__init__(model_config)
         
-
-        self.vqgan = VQModel(**model_config['VQGAN']['params']).eval()
-        self.vqgan.train = disabled_train
-        for param in self.vqgan.parameters():
-            param.requires_grad = False
-        print(f"load vqgan from {model_config['VQGAN']['params']['ckpt_path']}")
-
         # Condition Stage Model
         if self.condition_key == 'nocond':
             self.cond_stage_model = None
@@ -36,6 +29,17 @@ class LatentBrownianBridgeModel_Pathology(BrownianBridgeModel):
             self.cond_stage_model = SpatialRescaler(**vars(model_config['CondStageParams']))
         else:
             raise NotImplementedError
+        
+        assert(hasattr(self, 'cond_stage_model')), "Cond Stage Model initialization failed"
+        
+        self.vqgan = VQModel(**model_config['VQGAN']['params']).eval()
+        self.vqgan.train = disabled_train
+        for param in self.vqgan.parameters():
+            param.requires_grad = False
+        print(f"load vqgan from {model_config['VQGAN']['params']['ckpt_path']}")
+
+
+        
 
     def get_ema_net(self):
         return self
