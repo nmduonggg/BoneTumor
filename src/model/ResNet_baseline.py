@@ -15,7 +15,7 @@ class ResNet_baseline(nn.Module):
         # model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
         #                           pretrained=True, init_values=1e-5, dynamic_img_size=True)
         model = timm.create_model(
-            "resnet101.a2_in1k", img_size=256, pretrained=True, num_classes=out_nc)
+            "resnet101.a2_in1k", pretrained=True, num_classes=out_nc)
         
         self.tile_encoder = model
 
