@@ -322,6 +322,7 @@ if __name__=='__main__':
         label_names = [n for n in os.listdir(label_dir) if ('.jpg' in n or '.png' in n)]
 
         for label_name in label_names:
+            if 'S4' in label_name: continue
             
             # start
             

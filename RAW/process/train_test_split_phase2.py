@@ -43,8 +43,8 @@ if __name__=='__main__':
     with open(metadata_path, 'r') as f:
         data_list = json.load(f)
     
-    train_ratio = 0.8
-    valid_ratio = 0.1
+    train_ratio = 0.9
+    valid_ratio = 0.08
         
     num_items = len(data_list)
         

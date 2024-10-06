@@ -178,10 +178,10 @@ bbdm:
 
         skip_sample: True
         sample_type: 'linear' # options {"linear", "sin"}
-        sample_step: 200
+        sample_step: 256
 
         num_timesteps: 1024 # timesteps
-        eta: 0.8 # DDIM reverse process eta
+        eta: 0.1 # DDIM reverse process eta
         max_var: 0.8 # maximum variance
 
         UNetParams:
