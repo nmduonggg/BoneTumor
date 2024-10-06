@@ -18,10 +18,10 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 256
+    batch_size: 1024
     balance: False
     augment: true
-    n_workers: 2
+    n_workers: 4
 
   valid:
     type: valid
@@ -32,9 +32,9 @@ datasets:
     label_dir: ../RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
-    batch_size: 1024
+    batch_size: 2048
     augment: false
-    n_workers: 2
+    n_workers: 4
 
   test:
     type: test

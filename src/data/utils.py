@@ -60,6 +60,6 @@ def denormalize_np(im, rgb_mean=(0.485, 0.456, 0.406), rgb_std=(0.229, 0.224, 0.
     return im * (rgb_std) + rgb_mean
 
 def denormalize_tensor(im, rgb_mean=(0.485, 0.456, 0.406), rgb_std=(0.229, 0.224, 0.225)):
-    mean_tensor = torch.tensor(rgb_mean).resize(1, -1, 1, 1)
-    std_tensor = torch.tensor(rgb_std).resize(1, -1, 1, 1)
+    mean_tensor = torch.tensor(rgb_mean).reshape(1, -1, 1, 1).to(im.device)
+    std_tensor = torch.tensor(rgb_std).reshape(1, -1, 1, 1).to(im.device)
     return im * (std_tensor) + mean_tensor

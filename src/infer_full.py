@@ -58,7 +58,7 @@ else:
 # Init
 crop_sz = 256*8
 step = 256*8
-small_h = small_w = 256
+small_h = small_w = 256*2
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
 color_map = [
@@ -194,35 +194,35 @@ def infer(infer_path, label_path):
         im = transform(patch).float().unsqueeze(0)
         
         if edge_score <= 5: # filter background
-            pred_im = np.zeros((crop_sz, crop_sz, 7))
-            pred_im[:, :, 0] = 1e-9
+            pred_im = np.ones((small_h, small_w, 3)) * 255
             preds_list.append(pred_im)   # skip
             continue
         
         im = im.to(device)
         with torch.no_grad():
-            pred = model(im)[..., :-1]
-        # print(pred.shape)
-        # print(pred.shape)
-        pred = torch.softmax(pred, dim=-1).cpu().squeeze(0).numpy()
-        # pred = np.ones((small_h, small_w, 7)) * pred
-        
+            pred = model(im)[0].permute(1,2,0).cpu().numpy()  # B, 3, H, W
+            pred = cv2.resize(pred, (small_h, small_w), interpolation=cv2.INTER_NEAREST)
+            
         preds_list.append(pred)
     
     kwargs['sr_list'] = preds_list
-    kwargs['channel'] = 7
+    kwargs['channel'] = 3
+    kwargs['step'] = int(small_step)
+    kwargs['patch_size'] = small_h
+    kwargs['h'] = int(h / ratio)
+    kwargs['w'] = int(w / ratio)
     
-    prediction = postprocess(**kwargs)  # hxwx7
-    prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2)
-    output = np.zeros((prediction.shape[0], prediction.shape[1], 3), dtype='uint8')
+    prediction = postprocess(**kwargs) * 255  # hxwx7
+    # prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2)
+    # output = np.zeros((prediction.shape[0], prediction.shape[1], 3), dtype='uint8')
     
-    for i in range(len(color_map)):
-        color = np.array(color_map[i]).astype(np.uint8)
-        mask = np.all(np.abs(prediction-i) < 1e-9, axis=-1)
-        print(mask.sum())
-        output[mask] = color
+    # for i in range(len(color_map)):
+    #     color = np.array(color_map[i]).astype(np.uint8)
+    #     mask = np.all(np.abs(prediction-i) < 1e-9, axis=-1)
+    #     print(mask.sum())
+    #     output[mask] = color
         
-    prediction = cv2.resize(output, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+    prediction = cv2.resize(prediction, (img.shape[1], img.shape[0]))
     # label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT)
     
     
