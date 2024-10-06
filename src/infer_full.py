@@ -58,7 +58,7 @@ else:
 # Init
 crop_sz = 256*8
 step = 256*8
-small_h = small_w = 256*2
+small_h = small_w = 256
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
 color_map = [
@@ -104,6 +104,10 @@ def prepare(infer_path):
     global crop_sz, step
     
     img = open_img(infer_path)
+    h, w = img.shape[:2]
+    pad_h = int(h % step)
+    pad_w = int(w % step)
+    img = np.pad(img, ((0, pad_h), (0, pad_w), (0,0)), mode='constant', constant_values=255)
     
     return [img, utils.crop(img, crop_sz, step)]
     
@@ -194,7 +198,7 @@ def infer(infer_path, label_path):
         im = transform(patch).float().unsqueeze(0)
         
         if edge_score <= 5: # filter background
-            pred_im = np.ones((small_h, small_w, 3)) * 255
+            pred_im = np.ones((small_h, small_w, 3))
             preds_list.append(pred_im)   # skip
             continue
         

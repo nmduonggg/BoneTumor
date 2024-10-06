@@ -3,6 +3,8 @@ from __future__ import absolute_import
 from .UNI_lora_cls import UNI_lora_cls
 from .ViT_baseline import ViT_baseline
 from .ResNet_baseline import ResNet_baseline
+from .MobileNetV2_baseline import MobileNetV2_baseline
+
 from .Transformer_reorder import TransformerReorder
 from .Stacked_model import StackedModel
 from .StackedDiffusion_model import StackedDiffusionModel
@@ -14,6 +16,8 @@ def create_model(opt):
         return ViT_baseline(opt['network_G']['out_nc'])
     elif opt['network_G']['which_model_G'] == 'resnet_baseline':
         return ResNet_baseline(opt['network_G']['out_nc'])
+    elif opt['network_G']['which_model_G'] == 'mobilenetv2_baseline':
+        return MobileNetV2_baseline(opt['network_G']['out_nc'])
     
     elif opt['network_G']['which_model_G'] == 'transformer_reorder':
         return TransformerReorder()

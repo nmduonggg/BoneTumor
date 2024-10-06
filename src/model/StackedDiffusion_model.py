@@ -10,6 +10,7 @@ import timm
 import loralib as lora
 from huggingface_hub import hf_hub_download
 import numpy as np
+import matplotlib.pyplot as plt
 import data.utils as data_utils
 
 from model import TransformerReorder, UNI_lora_cls
@@ -56,9 +57,10 @@ class StackedDiffusionModel(nn.Module):
         x_cont = self._to_normal(x_cont)
         
         out = self.phase2_refiner.sample_infer(x_cond, x_cont, clip_denoised=self.option['bbdm']['clip_denoised'])
+        out = self._rm_normal(out)
         
-        np_out = out.permute(0,2,3,1).squeeze(0).cpu().numpy()
-        print(np_out)
+        # np_out = out.permute(0,2,3,1).squeeze(0).cpu().numpy()
+        # plt.imsave('./sample.png', np_out)
         
         return out
     
@@ -69,6 +71,7 @@ class StackedDiffusionModel(nn.Module):
     
     def _rm_normal(self, x):
         x = x * 0.5 + 0.5
+        x = torch.clamp(x, 0, 1.)
         return x
 
     def _generate_patch_seq(self, x):
