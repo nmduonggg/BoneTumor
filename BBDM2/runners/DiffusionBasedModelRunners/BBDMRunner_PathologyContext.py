@@ -501,8 +501,8 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                     torch.save(optimizer_scheduler_states,
                                                os.path.join(self.config.result.ckpt_path, optim_sche_ckpt_name))
                                 else:
-                                    if average_loss < self.topk_checkpoints[top_key]["loss"]:
-                                    # if average_psnr < self.topk_checkpoints[top_key]['psnr']:
+                                    # if average_loss < self.topk_checkpoints[top_key]["loss"]:
+                                    if average_psnr > self.topk_checkpoints[top_key]['psnr']:
                                         print("remove " + self.topk_checkpoints[top_key]["model_ckpt_name"])
                                         remove_file(os.path.join(self.config.result.ckpt_path,
                                                                  self.topk_checkpoints[top_key]['model_ckpt_name']))

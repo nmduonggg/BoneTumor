@@ -15,7 +15,7 @@ testing:
   sample_num: 1
 
 data:
-  dataset_name: 'PredIm-2-ysubx'
+  dataset_name: 'PredIm-1-ysubx'
   dataset_type: 'custom_aligned_refine'
   dataset_config:
     dataset_path: '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
@@ -27,7 +27,7 @@ data:
     batch_size: 4
     shuffle: True
   val:
-    batch_size: 8
+    batch_size: 16
     shuffle: True
   test:
     batch_size: 8
@@ -94,16 +94,16 @@ model:
 
     params:
       mt_type: 'linear' # options {'linear', 'sin'}
-      objective: 'grad' # options {'grad', 'noise', 'ysubx'}
+      objective: 'ysubx' # options {'grad', 'noise', 'ysubx'}
       loss_type: 'l1' # options {'l1', 'l2'}
 
       skip_sample: True
       sample_type: 'linear' # options {"linear", "sin"}
-      sample_step: 256
+      sample_step: 100
 
-      num_timesteps: 1024 # timesteps
-      eta: 0.8 # DDIM reverse process eta
-      max_var: 0.8 # maximum variance
+      num_timesteps: 500 # timesteps
+      eta: 0.5 # DDIM reverse process eta
+      max_var: 0.5 # maximum variance
 
       UNetParams:
         image_size: 32
