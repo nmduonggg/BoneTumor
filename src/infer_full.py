@@ -57,7 +57,7 @@ else:
     
 # Init
 crop_sz = 256*8
-step = 256*8
+step = 256*7
 small_h = small_w = 256
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
@@ -82,6 +82,21 @@ def apply_threshold_mapping(image):
         mask = np.all(np.abs(image - color) < tolerance, axis=-1)
         output[mask] = color
         # output[mask] = idx
+
+    return output
+
+def convert_mapping(image):
+    # Create masks for pixels that are closer to green or pink
+    # Initialize the output image with the original image
+    tolerance = 50
+    
+    output = np.ones_like(image)*255 # 2D only
+    masks = []
+    for idx, color in enumerate(color_map):
+        color = np.array(color)
+        mask = np.all(np.abs(image - color) < tolerance, axis=-1)
+        # output[mask] = color
+        output[mask] = idx
 
     return output
 
@@ -198,34 +213,38 @@ def infer(infer_path, label_path):
         im = transform(patch).float().unsqueeze(0)
         
         if edge_score <= 5: # filter background
-            pred_im = np.ones((small_h, small_w, 3))
-            preds_list.append(pred_im)   # skip
+            # pred_im = np.ones((small_h, small_w, 3))
+            # preds_list.append(pred_im)   # skip
+            pred_im = np.zeros((small_h, small_w, 7))
+            pred_im[:, :, 0] = 1e-9
+            preds_list.append(pred_im)
             continue
         
         im = im.to(device)
         with torch.no_grad():
             pred = model(im)[0].permute(1,2,0).cpu().numpy()  # B, 3, H, W
             pred = cv2.resize(pred, (small_h, small_w), interpolation=cv2.INTER_NEAREST)
-            
+            pred = convert_mapping(pred)
         preds_list.append(pred)
     
     kwargs['sr_list'] = preds_list
-    kwargs['channel'] = 3
+    kwargs['channel'] = 7
     kwargs['step'] = int(small_step)
     kwargs['patch_size'] = small_h
     kwargs['h'] = int(h / ratio)
     kwargs['w'] = int(w / ratio)
     
-    prediction = postprocess(**kwargs) * 255  # hxwx7
-    # prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2)
-    # output = np.zeros((prediction.shape[0], prediction.shape[1], 3), dtype='uint8')
+    prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2)
+    prediction = postprocess(**kwargs)  # hxwx7
+    output = np.zeros((prediction.shape[0], prediction.shape[1], 3), dtype='uint8')
     
-    # for i in range(len(color_map)):
-    #     color = np.array(color_map[i]).astype(np.uint8)
-    #     mask = np.all(np.abs(prediction-i) < 1e-9, axis=-1)
-    #     print(mask.sum())
-    #     output[mask] = color
-        
+    for i in range(len(color_map)):
+        color = np.array(color_map[i]).astype(np.uint8)
+        mask = np.all(np.abs(prediction-i) < 1e-9, axis=-1)
+        print(mask.sum())
+        output[mask] = color
+    # prediction = postprocess(**kwargs) * 255  # hxwx7
+    
     prediction = cv2.resize(prediction, (img.shape[1], img.shape[0]))
     # label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT)
     

@@ -181,8 +181,8 @@ bbdm:
         sample_step: 200
 
         num_timesteps: 1024 # timesteps
-        eta: 0.01 # DDIM reverse process eta
-        max_var: 0.8 # maximum variance
+        eta: 0.8 # DDIM reverse process eta
+        max_var: 0.5 # maximum variance
 
         UNetParams:
           image_size: 32
