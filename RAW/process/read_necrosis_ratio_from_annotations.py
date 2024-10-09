@@ -130,9 +130,9 @@ def huvos_classify(huvos_ratio):
         
 
 if __name__ == '__main__':
-    label_folder = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/RAW_DATA/labels'
-    image_folder = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/RAW_DATA/images'
-    outdir = "/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS"
+    label_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-/labels'
+    image_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-/images'
+    outdir = "/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS"
     os.makedirs(outdir, exist_ok=True)
     done_cases = []
     

@@ -15,8 +15,8 @@ testing:
   sample_num: 1
 
 data:
-  dataset_name: 'PredIm-1-ysubx'
-  dataset_type: 'custom_aligned_refine'
+  dataset_name: 'PredIm-1-ysubx-concat-with9'
+  dataset_type: 'custom_aligned_refine_concat'
   dataset_config:
     dataset_path: '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
     image_size: 256
@@ -24,10 +24,10 @@ data:
     to_normal: True
     flip: True
   train:
-    batch_size: 2
+    batch_size: 8
     shuffle: True
   val:
-    batch_size: 16
+    batch_size: 2
     shuffle: True
   test:
     batch_size: 8
@@ -39,7 +39,7 @@ model:
   latent_before_quant_conv: False
   normalize_latent: False
   only_load_latent_mean_std: False
-  model_load_path: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-1-ysubx/LBBDM-f8/checkpoint/top_model_epoch_4.pth # model checkpoint path
+  # model_load_path: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-1-ysubx/LBBDM-f8/checkpoint/top_model_epoch_3.pth # model checkpoint path
   # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
   EMA:
@@ -50,8 +50,8 @@ model:
 
   CondStageParams:
     n_stages: 3
-    in_channels: 3
-    out_channels: 4
+    in_channels: 6
+    out_channels: 1
 
   VQGAN:
     params:
@@ -107,7 +107,7 @@ model:
 
       UNetParams:
         image_size: 32
-        in_channels: 6
+        in_channels: 5
         model_channels: 128
         out_channels: 4
         num_res_blocks: 2
@@ -126,5 +126,5 @@ model:
         use_scale_shift_norm: True
         resblock_updown: True
         use_spatial_transformer: True
-        context_dim: 2
+        context_dim: 1
         condition_key: "SpatialRescaler" # options {"SpatialRescaler", "first_stage", "nocond"}

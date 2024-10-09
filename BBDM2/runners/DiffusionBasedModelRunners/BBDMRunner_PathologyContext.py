@@ -289,7 +289,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         if stage != 'test':
             self.writer.add_image(f'{stage}_ground_truth', image_grid, self.global_step, dataformats='HWC')
             
-        image_grid = get_image_grid(x_cont.to('cpu'), grid_size, to_normal=self.config.data.dataset_config.to_normal)
+        image_grid = get_image_grid(x_cont[:, 3:, ...].to('cpu'), grid_size, to_normal=self.config.data.dataset_config.to_normal)
         im = Image.fromarray(image_grid)
         im.save(os.path.join(sample_path, 'context.png'))
         if stage != 'test':

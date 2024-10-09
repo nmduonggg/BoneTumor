@@ -114,6 +114,10 @@ def prepare(infer_path):
     global crop_sz, step
     
     img = open_img(infer_path)
+    h, w = img.shape[:2]
+    pad_h = int(h % step)
+    pad_w = int(w % step)
+    img = np.pad(img, ((0, pad_h), (0, pad_w), (0,0)), mode='constant', constant_values=255)
     
     return [img, utils.crop(img, crop_sz, step)]
     
@@ -309,7 +313,7 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
 
 
 if __name__=='__main__':
-    done_cases = [f"Case_{n}" for n in [2, 3, 6, 8, 9, 11]]
+    done_cases = [f"Case_{n}" for n in []]
     cases = [f"Case_{n}" for n in range(1, 11)]
     metadatas = {}
     

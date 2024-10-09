@@ -57,8 +57,8 @@ else:
     
 # Init
 crop_sz = 256*8
-step = 256*7
-small_h = small_w = 256
+step = 256*8
+small_h = small_w = 256*2
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
 color_map = [
@@ -90,13 +90,21 @@ def convert_mapping(image):
     # Initialize the output image with the original image
     tolerance = 50
     
-    output = np.ones_like(image)*255 # 2D only
+    if np.max(image) <= 1:
+        image = (image * 255).astype(np.uint8)
+    
+    output = np.zeros(list(image.shape[:2]) + [7])
     masks = []
     for idx, color in enumerate(color_map):
         color = np.array(color)
         mask = np.all(np.abs(image - color) < tolerance, axis=-1)
+        mask = np.expand_dims(mask, axis=-1)    #hxwx1
         # output[mask] = color
-        output[mask] = idx
+        if mask.sum() > 0:
+            class_mask = np.zeros_like(output)
+            class_mask[:, :, idx] = 0.1
+            output = output * (1-mask) + mask * class_mask
+            # print(idx, mask.mean())
 
     return output
 
@@ -113,16 +121,19 @@ def read_percent_from_color(image):
 def open_img(image_path):
     img = cv2.imread(image_path)[:, :, :3]
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    h, w = img.shape[:2]
+    # pad_h = int(h % step)
+    # pad_w = int(w % step)
+    
+    pad_h = (step - h % step) if h % step != 0 else 0
+    pad_w = (step - w % step) if w % step != 0 else 0
+    img = np.pad(img, ((0, pad_h), (0, pad_w), (0,0)), mode='constant', constant_values=255)
     return img
 
 def prepare(infer_path):
     global crop_sz, step
     
     img = open_img(infer_path)
-    h, w = img.shape[:2]
-    pad_h = int(h % step)
-    pad_w = int(w % step)
-    img = np.pad(img, ((0, pad_h), (0, pad_w), (0,0)), mode='constant', constant_values=255)
     
     return [img, utils.crop(img, crop_sz, step)]
     
@@ -163,11 +174,11 @@ def infer(infer_path, label_path):
     fx = 5e-2
     fy = 5e-2
     
-    # label = open_img(label_path)
-    # label_mask = np.any(np.abs(label - np.array([255, 255, 255])) > 5, axis=-1).astype(int)
-    # label_mask = cv2.resize(label_mask, None, fx=fx, fy=fy, interpolation=cv2.INTER_NEAREST)
+    label = open_img(label_path)
+    label_mask = np.any(np.abs(label - np.array([255, 255, 255])) > 5, axis=-1).astype(int)
+    label_mask = cv2.resize(label_mask, None, fx=fx, fy=fy, interpolation=cv2.INTER_NEAREST)
     
-    # del label
+    del label
     
     model.to(device)
     model.eval()
@@ -212,8 +223,8 @@ def infer(infer_path, label_path):
             )
         im = transform(patch).float().unsqueeze(0)
         
-        if edge_score <= 5: # filter background
-            # pred_im = np.ones((small_h, small_w, 3))
+        if edge_score <= 1: # filter background
+            # pred_im = np.ones((small_h, small_w, 3)) * 255
             # preds_list.append(pred_im)   # skip
             pred_im = np.zeros((small_h, small_w, 7))
             pred_im[:, :, 0] = 1e-9
@@ -222,9 +233,12 @@ def infer(infer_path, label_path):
         
         im = im.to(device)
         with torch.no_grad():
-            pred = model(im)[0].permute(1,2,0).cpu().numpy()  # B, 3, H, W
+            # pred = model(im)[0].permute(1,2,0).cpu().numpy()  # B, 3, H, W -> H, W, 3
+            # pred = (pred * 255).astype('uint8')
+            # pred = cv2.resize(pred, (small_h, small_w), interpolation=cv2.INTER_NEAREST)
+            # pred = apply_threshold_mapping(pred)    # hxwx7
+            pred = model(im)[0].cpu().numpy()
             pred = cv2.resize(pred, (small_h, small_w), interpolation=cv2.INTER_NEAREST)
-            pred = convert_mapping(pred)
         preds_list.append(pred)
     
     kwargs['sr_list'] = preds_list
@@ -234,27 +248,27 @@ def infer(infer_path, label_path):
     kwargs['h'] = int(h / ratio)
     kwargs['w'] = int(w / ratio)
     
-    prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2)
     prediction = postprocess(**kwargs)  # hxwx7
-    output = np.zeros((prediction.shape[0], prediction.shape[1], 3), dtype='uint8')
+    prediction = np.expand_dims(np.argmax(prediction, axis=-1), axis=2) # hxwx1
+    output = np.zeros((prediction.shape[0], prediction.shape[1], 3))
     
     for i in range(len(color_map)):
         color = np.array(color_map[i]).astype(np.uint8)
         mask = np.all(np.abs(prediction-i) < 1e-9, axis=-1)
         print(mask.sum())
         output[mask] = color
-    # prediction = postprocess(**kwargs) * 255  # hxwx7
     
-    prediction = cv2.resize(prediction, (img.shape[1], img.shape[0]))
-    # label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST_EXACT)
+    prediction = cv2.resize(output, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+    label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+    label_mask = np.expand_dims(label_mask, axis=-1)
     
     
     # cut to align img and prediction
-    img_mask = np.expand_dims((np.abs(img[:, :, -1] - 255)) > 0, axis=-1)
+    # img_mask = np.expand_dims((np.abs(img[:, :, -1] - 255)) > 10, axis=-1)
     # label_mask = np.expand_dims(label_mask, axis=-1)
     
-    prediction = prediction * img_mask + np.ones_like(prediction)*255*(1-img_mask)
-    # prediction = prediction * label_mask + np.ones_like(prediction)*255*(1-label_mask)
+    # prediction = prediction * img_mask + np.ones_like(prediction)*255*(1-img_mask)
+    prediction = prediction * label_mask + np.ones_like(prediction)*255*(1-label_mask)
     prediction = prediction.astype(np.uint8)
     
     class_counts = read_percent_from_color(prediction)
@@ -318,10 +332,13 @@ def huvos_classify(huvos_ratio):
 if __name__=='__main__':
     
     
-    done_cases = [f"Case_{n}" for n in [2]]
+    done_cases = [f"Case_{n}" for n in []]
+    cases = [f"Case_{n}" for n in range(1, 11)]
+    # cases = ["Case_6"]
     
     for case in os.listdir(args.labels_dir):
         if case in done_cases: continue
+        if case not in cases: continue
         # if case != 'Case_1': continue
         
         label_dir = os.path.join(args.labels_dir, case)
@@ -341,7 +358,7 @@ if __name__=='__main__':
         label_names = [n for n in os.listdir(label_dir) if ('.jpg' in n or '.png' in n)]
 
         for label_name in label_names:
-            if 'S15' not in label_name: continue
+            # if 'S15' not in label_name: continue
             
             # start
             

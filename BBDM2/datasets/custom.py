@@ -82,6 +82,39 @@ class CustomAlignedRefineDataset(Dataset):
     def __getitem__(self, i):
         return self.imgs_ori[i], self.preds_cond[i], self.imgs_cont[i]
         # return self.imgs_ori[i], self.imgs_cont[i], self.preds_cond[i]
+        
+@Registers.datasets.register_with_name('custom_aligned_refine_concat')
+class CustomAlignedRefineDatasetConcat(Dataset):
+    def __init__(self, dataset_config, stage='train'):
+        super().__init__()
+        self.image_size = (dataset_config.image_size, dataset_config.image_size)
+        image_folder_ori = os.path.join(dataset_config.dataset_path, 'label') # label
+        image_folder_cond = os.path.join(dataset_config.dataset_path, 'images')    # source
+        pred_folder_cond = os.path.join(dataset_config.dataset_path, 'false_pred')
+        
+        with open(os.path.join(dataset_config.dataset_path, 'dataset_split.json'), 'r') as f:
+            self.indices = json.load(f)[stage]
+            
+        with open(os.path.join(dataset_config.dataset_path, 'metadata.json'), 'r') as f:
+            data_list = json.load(f)
+            
+        self.flip = dataset_config.flip if stage == 'train' else False  
+        self.to_normal = dataset_config.to_normal
+
+        self.imgs_ori = ImageIndicesDataset(image_folder_ori, self.indices, data_list, 
+                                            self.image_size, flip=self.flip, to_normal=self.to_normal)
+        self.imgs_cont = ImageIndicesDataset(image_folder_cond, self.indices, data_list,
+                                            self.image_size, flip=self.flip, to_normal=self.to_normal)
+        self.preds_cond = ImageIndicesDataset(pred_folder_cond, self.indices, data_list,
+                                            self.image_size, flip=self.flip, to_normal=self.to_normal)
+
+    def __len__(self):
+        return len(self.imgs_ori)
+
+    def __getitem__(self, i):
+        cont = torch.cat([self.preds_cond[i][0], self.imgs_cont[i][0]], dim=0)
+        return self.imgs_ori[i], self.preds_cond[i], (cont, self.imgs_cont[i][1])
+        # return self.imgs_ori[i], self.imgs_cont[i], self.preds_cond[i]
 
 
 @Registers.datasets.register_with_name('custom_colorization_LAB')

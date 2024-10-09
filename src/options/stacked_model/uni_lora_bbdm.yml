@@ -94,8 +94,8 @@ bbdm:
     sample_num: 1
 
   data:
-    dataset_name: 'PredIm-2-ysubx'
-    dataset_type: 'custom_aligned_refine'
+    dataset_name: 'PredIm-1-ysubx-concat-with9'
+    dataset_type: 'custom_aligned_refine_concat'
     dataset_config:
       dataset_path: '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
       image_size: 256
@@ -103,10 +103,10 @@ bbdm:
       to_normal: True
       flip: True
     train:
-      batch_size: 4
+      batch_size: 8
       shuffle: True
     val:
-      batch_size: 8
+      batch_size: 2
       shuffle: True
     test:
       batch_size: 8
@@ -118,7 +118,7 @@ bbdm:
     latent_before_quant_conv: False
     normalize_latent: False
     only_load_latent_mean_std: False
-    # model_load_path: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-2/LBBDM-f8/checkpoint/top_model_epoch_10.pth # model checkpoint path
+    # model_load_path: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-1-ysubx/LBBDM-f8/checkpoint/top_model_epoch_3.pth # model checkpoint path
     # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
     EMA:
@@ -129,8 +129,8 @@ bbdm:
 
     CondStageParams:
       n_stages: 3
-      in_channels: 3
-      out_channels: 4
+      in_channels: 6
+      out_channels: 1
 
     VQGAN:
       params:
@@ -180,13 +180,13 @@ bbdm:
         sample_type: 'linear' # options {"linear", "sin"}
         sample_step: 200
 
-        num_timesteps: 1024 # timesteps
+        num_timesteps: 1000 # timesteps
         eta: 0.8 # DDIM reverse process eta
-        max_var: 0.5 # maximum variance
+        max_var: 0.8 # maximum variance
 
         UNetParams:
           image_size: 32
-          in_channels: 8
+          in_channels: 5
           model_channels: 128
           out_channels: 4
           num_res_blocks: 2
@@ -205,5 +205,5 @@ bbdm:
           use_scale_shift_norm: True
           resblock_updown: True
           use_spatial_transformer: True
-          context_dim: 4
+          context_dim: 1
           condition_key: "SpatialRescaler" # options {"SpatialRescaler", "first_stage", "nocond"}

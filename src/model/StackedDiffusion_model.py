@@ -16,6 +16,19 @@ import data.utils as data_utils
 from model import TransformerReorder, UNI_lora_cls
 from model.bbdm.BrownianBridge.LatentBrownianBridgeModel_PathologyContext import LatentBrownianBridgeModel_Pathology as LBBDM
 
+
+def generate_color_boundaries(color_map, threshold=20):
+    boundaries = []
+    for color in color_map:
+        lower_bound = [max(0, c - threshold) for c in color]
+        upper_bound = [min(255, c + threshold) for c in color]
+        boundaries.append({
+            'color': color,
+            'lower_bound': np.array(lower_bound),
+            'upper_bound': np.array(upper_bound)
+        })
+    return boundaries
+
 class StackedDiffusionModel(nn.Module):
     def __init__(self, option):
         super(StackedDiffusionModel, self).__init__()
@@ -34,19 +47,36 @@ class StackedDiffusionModel(nn.Module):
             [165, 42, 42],  # Inflammatory
             [0, 0, 255]    # Non-tumor tissue
         ]
+        self.boundaries = generate_color_boundaries(self.color_map, threshold=50)
         
-    def forward(self, x):
+    def forward(self, x, infer=True):
         # BxCxHxW
         batch_size = x.size(0)
         
         # run phase 1
-        patch_seq, num_h, num_w, h, w = self._generate_patch_seq(x) # -> BxSx1025
+        original_preds, num_h, num_w, h, w = self._generate_patch_seq(x) 
+        out_ori = self._combine_tensor(
+                        original_preds, num_h, num_w, h, w, self.patch_size, self.patch_size,
+                        batch_size=batch_size, channel=7)   # B, H, W, C
         
-        out1 = self._combine_tensor(
-                        patch_seq, num_h, num_w, h, w, self.patch_size, self.patch_size,
-                        batch_size=batch_size, channel=3)   # B, H, W, C
+        out_indices = torch.argmax(out_ori, dim=-1)   # BxHxW
+        out = torch.zeros_like(out_ori.permute(0,3,1,2))    # Bx7xHxW
         
-        out1 = out1.permute(0, 3, 1, 2) / 255.  # original color 0,1
+        out.scatter_(1, out_indices.unsqueeze(1), 1)    # Bx7xHxW 
+        out = out.unsqueeze(2) * \
+            torch.tensor(self.color_map).reshape(1, len(self.color_map), -1, 1, 1).to(out.device)   # Bx7x3xHxW
+        out1 = torch.sum(out, dim=1)    # Bx3xHxW
+
+        
+        # out1 = self._combine_tensor(
+        #                 patch_seq, num_h, num_w, h, w, self.patch_size, self.patch_size,
+        #                 batch_size=batch_size, channel=3)   # B, H, W, C
+        
+        out_ori = F.interpolate(out_ori.permute(0,3,1,2), 
+                                (self.phase2_size, self.phase2_size)).permute(0,2,3,1)
+        
+        # out1 = out1.permute(0, 3, 1, 2) / 255.  # original color 0,1
+        out1 = out1 / 255.
         
         x = data_utils.denormalize_tensor(x)
         
@@ -56,14 +86,106 @@ class StackedDiffusionModel(nn.Module):
         x_cond = self._to_normal(x_cond)
         x_cont = self._to_normal(x_cont)
         
+        x_cont = torch.cat([x_cond, x_cont], dim=1)
+        
         out = self.phase2_refiner.sample_infer(x_cond, x_cont, clip_denoised=self.option['bbdm']['clip_denoised'])
         out = self._rm_normal(out)
         
-        # np_out = out.permute(0,2,3,1).squeeze(0).cpu().numpy()
-        # plt.imsave('./sample.png', np_out)
+        if infer:
+            out = self.remap_color(out)
+            out = out[0].permute(1,2,0)  # B, 3, H, W -> H, W, 3
+            # np_out = out.cpu().numpy()
+            # plt.imsave('./sample.png', np_out)
+            out = self._convert_mapping_tensor(out).unsqueeze(0)    # hxwx7
+            # out = torch.tensor(out).unsqueeze(0).to(x.device)
+            
+            out_ori = torch.softmax(out_ori, dim=-1)    # convert to prob vector
+            # out_ori = torch.softmax(out_ori, dim=-1)
+            out = out * 0.9 + out_ori
+            # out_mask = torch.amax(out_ori, dim=-1, keepdim=True) > 0.5   # BxHxW
+            
+            # out = out * (~out_mask) + out_ori * out_mask
+            # out = out
         
         return out
     
+    # def _convert_mapping(self, image):
+    #     # Create masks for pixels that are closer to green or pink
+    #     # Initialize the output image with the original image
+    #     tolerance = 85
+        
+    #     if np.max(image) <= 1:
+    #         image = (image * 255).astype(np.uint8)
+        
+    #     output = np.zeros(list(image.shape[:2]) + [7])
+    #     masks = []
+    #     for idx, color in enumerate(self.color_map):
+    #         color = np.array(color)
+    #         mask = np.all(np.abs(image - color) < tolerance, axis=-1)
+    #         mask = np.expand_dims(mask, axis=-1)    #hxwx1
+    #         # output[mask] = color
+    #         if mask.sum() > 0:
+    #             class_mask = np.zeros_like(output)
+    #             class_mask[:, :, idx] = 1.0
+    #             output = output * (1-mask) + mask * class_mask
+    #             # print(idx, mask.mean())
+
+    #     return output
+    
+
+    def _convert_mapping_tensor(self, image):
+        # Create masks for pixels that are closer to green or pink
+        # Initialize the output image with the original image
+        tolerance = 5
+        
+        # Nếu giá trị lớn nhất của tensor nhỏ hơn hoặc bằng 1, chuyển đổi nó sang kiểu uint8
+        # if torch.max(image) <= 1:
+        image = (image * 255).to(torch.uint8)
+        
+        # Tạo tensor đầu ra với kích thước (h, w, 7)
+        output = torch.zeros(list(image.shape[:2]) + [7], dtype=torch.float32).to(image.device)
+        
+        masks = 0.
+        for idx, color in enumerate(self.color_map):
+            color = torch.tensor(color, dtype=torch.uint8).to(image.device)
+            
+            # Tạo mặt nạ bằng cách tìm các pixel có giá trị gần với màu cụ thể
+            mask = torch.all(torch.abs(image - color) < tolerance, dim=-1).to(image.device)
+            
+            mask = mask.unsqueeze(-1)  # Thêm chiều mới để có kích thước (h, w, 1)
+            
+            # # Nếu mặt nạ có giá trị hợp lệ, tạo mặt nạ lớp tương ứng
+            if mask.sum() > 0:
+                class_mask = torch.zeros_like(output).to(image.device)
+                class_mask[:, :, idx] = 1.0
+            
+                # Cập nhật output bằng cách sử dụng mặt nạ
+                output = output * (~mask) + mask * class_mask
+            # output += class_mask
+        # print(output.max())
+                
+            # masks += mask.float().mean()
+        # print(masks)
+
+        return output
+    
+    def remap_color(self, image):
+        # Define lower and upper bounds for blue-like pixels
+        image = (image * 255).to(torch.uint8)
+        new_image = image.clone()
+        for color in self.boundaries:
+        
+            lb = torch.tensor(color['lower_bound'], dtype=torch.uint8).view(1, 3, 1, 1).to(image.device)
+            ub = torch.tensor(color['upper_bound'], dtype=torch.uint8).view(1, 3, 1, 1).to(image.device)
+
+            # Create a mask for blue-like pixels
+            mask = ((image >= lb) & (image <= ub)).all(dim=1).to(image.device)
+            if mask.sum() == 0: continue
+            # Set all blue-like pixels to standard blue [0, 0, 255]
+            new_image[:, :, mask.squeeze(0)] = torch.tensor(color['color'], dtype=torch.uint8).view(3, 1).to(image.device)
+        
+        return new_image / 255.
+        
     def _to_normal(self, x):
         x = (x - 0.5) * 2.
         x = torch.clamp(x, -1, 1)
@@ -84,29 +206,20 @@ class StackedDiffusionModel(nn.Module):
         
         preds = self.phase1_classifier(img_tensor) 
         preds = preds.reshape(length, B, -1)    # length_of_seq x B x C
-        out_indices = torch.argmax(preds, dim=-1)   # SxB
-        out = torch.zeros_like(preds)
-        out.scatter_(2, out_indices.unsqueeze(2), 1)    # SxBxC
-        out = out.unsqueeze(-1) * torch.tensor(self.color_map).reshape(1, 1, len(self.color_map), -1).to(out.device)   # SxBxCx3
-        out = torch.sum(out, dim=2)    # SxBx3
         
-        # print(out.shape)
-        out = out.reshape(list(out.shape) + [1, 1]) * \
-            torch.ones(list(out.shape) + [self.patch_size, self.patch_size]).to(out.device)
-        # outs = [out[i] for i in range(len(img_list))]
-        
-        # for i in range(len(img_list)):
-        #     # pred = self.phase1_classifier(img)    # BxN
-        #     pred = preds[i, ...]    # BxC
-        #     out_idx = torch.argmax(pred, dim=-1) # B
-        #     out = torch.zeros_like(pred)
-        #     out.scatter_(1, out_idx.unsqueeze(1), 1)    # BxN
-        #     out = out.unsqueeze(-1) * torch.tensor(self.color_map).to(out.device).unsqueeze(0)    # BxNx1 * 1xNx3 -> BxNx3
-        #     out = torch.sum(out, dim=1) # BxNx3 -> Bx3
+        preds = preds.reshape(list(preds.shape) + [1, 1]) * \
+            torch.ones((list(preds.shape) + [self.patch_size, self.patch_size])).to(preds.device)   # lenghtxBxCxHxW
             
-        #     outs.append(out)
+        # out_indices = torch.argmax(preds, dim=2)   # SxBxHxW
+        # out = torch.zeros_like(preds)
         
-        return out, num_h, num_w, h, w
+        # out.scatter_(2, out_indices.unsqueeze(2), 1)    # SxBxCxHxW
+        # out = out.unsqueeze(3) * \
+        #     torch.tensor(self.color_map).reshape(1, 1, len(self.color_map), -1, 1, 1).to(out.device)   # SxBxCx3
+        # out = torch.sum(out, dim=2)    # SxBx3xHxW
+        
+        
+        return preds, num_h, num_w, h, w
     
     def _crop_tensor(self, img, crop_sz, step):
         # img: BxCxHxW
