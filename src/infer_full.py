@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import argparse
 from tqdm import tqdm
+import json
 
 from torchvision import transforms
 import options.options as option
@@ -27,6 +28,7 @@ parser.add_argument('--labels_dir', type=str, required=True)
 parser.add_argument('--images_dir', type=str, required=True)
 parser.add_argument('--phase1_path', type=str, required=True)
 parser.add_argument('--phase2_path', type=str, required=True)
+parser.add_argument('--outdir', required=True)
 
 args = parser.parse_args()
 opt = option.parse(args.opt, root=args.root)
@@ -58,7 +60,7 @@ else:
 # Init
 crop_sz = 256*8
 step = 256*8
-small_h = small_w = 256*2
+small_h = small_w = 256
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
 color_map = [
@@ -84,6 +86,14 @@ def apply_threshold_mapping(image):
         # output[mask] = idx
 
     return output
+
+def write2file(text, target_file, mode='r'):
+    with open(target_file, mode) as f:
+        f.write(f"{text}\n")
+        
+def add2dict(dict_, key, value):
+    dict_[key] = value
+    return dict_
 
 def convert_mapping(image):
     # Create masks for pixels that are closer to green or pink
@@ -164,21 +174,19 @@ def alpha_blending(im1, im2, alpha):
     out = cv2.addWeighted(im1, alpha , im2, 1-alpha, 0)
     return out
 
-def infer(infer_path, label_path):
+def infer(infer_path, label_path, target_file, outdir, image_dict):
     global color_map
     infer_name = os.path.basename(infer_path)
     
-    with open(os.path.join(working_dir, "result.txt"), "a") as f:
-        f.write(f"{infer_name}\n")
-    
-    fx = 5e-2
-    fy = 5e-2
+    fx = 8e-2
+    fy = 8e-2
     
     label = open_img(label_path)
     label_mask = np.any(np.abs(label - np.array([255, 255, 255])) > 5, axis=-1).astype(int)
     label_mask = cv2.resize(label_mask, None, fx=fx, fy=fy, interpolation=cv2.INTER_NEAREST)
     
     del label
+    print("Get Label Mask Done")
     
     model.to(device)
     model.eval()
@@ -199,7 +207,7 @@ def infer(infer_path, label_path):
     img = img[:h,:w, :]
     img = cv2.resize(img, None, fx=fx, fy=fy)
     print(img.max())
-    plt.imsave(os.path.join(working_dir, infer_name), img) 
+    plt.imsave(os.path.join(outdir, infer_name), img) 
     print("Save original image done") 
     
     preds_list, class_list = [], []
@@ -276,7 +284,7 @@ def infer(infer_path, label_path):
     blend_im = alpha_blending(
         img, prediction, 0.6)
     
-    plt.imsave(os.path.join(working_dir, f"{infer_name.split('.')[0]}_pred.png"), prediction) 
+    plt.imsave(os.path.join(outdir, f"{infer_name.split('.')[0]}_pred.png"), prediction) 
     
     del prediction  # free mem
     
@@ -286,34 +294,51 @@ def infer(infer_path, label_path):
     
     labels = ['background', 'viable', 'necrosis', 'fibrosis/hyalination', 'hemorrhage/cystic-change', 'inflammatory', 'non-tumor']
 
-    plt.imsave(os.path.join(working_dir, f"{infer_name.split('.')[0]}_blend.png"),
+    plt.imsave(os.path.join(outdir, f"{infer_name.split('.')[0]}_blend.png"),
                blend_im.astype(np.uint8))
     print("Save prediction done")
         
-    print("[RESULT]")
     for i in range(6):
-        # if i==0: continue
-        # i += 1
-        print(f"{labels[i+1]} - {round(class_percent[i], 4)}")
-        with open(os.path.join(working_dir, "result.txt"), "a") as f:
-            f.write(f"{labels[i+1]} - {round(class_percent[i], 3)*100}%\n")
+        write2file(f"{labels[i+1]} - {round(class_percent[i]*100, 1)}%", target_file, 'a')
+        image_dict = add2dict(image_dict, labels[i+1], class_percent[i])
             
     huvos_ratio = 1 - class_counts[0] / np.sum(class_counts[:5]) 
     
     if class_percent[-1] >= 0.99:
         huvos_ratio = None
-    
-    with open(os.path.join(working_dir, "result.txt"), "a") as f:
-        if huvos_ratio is not None:
-            huvos_ratio = round(huvos_ratio*100, 1)
-            f.write(f'total_necrosis: {huvos_ratio}% \n')
-        else:
-            f.write('total_necrosis: N/A \n')
-        f.write(f"-------------\n")
         
-    print("-"*20)
+    if huvos_ratio is not None:
+        write2file(f'total_necrosis: {round(huvos_ratio*100, 1)}%', target_file, 'a')
+    else:
+        write2file('total_necrosis: N/A', target_file, 'a')
+    write2file("--------------", target_file, 'a')
     
-    return class_counts, huvos_ratio
+    return huvos_ratio, image_dict
+
+def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
+    huvos_case = []
+    label_names = [n for n in os.listdir(label_folder) if ('.jpg' in n or '.png' in n)]
+    for label_name in label_names:
+        if "x8" in label_name:
+            image_name = label_name.split("-x8")[0] + '.png'
+            upsample = True
+        else:
+            image_name = label_name.split("-labels")[0] + '.png'
+        
+        infer_path = os.path.join(image_folder, image_name)
+        label_path = os.path.join(label_folder, label_name)
+            
+        image_dict = {}
+        write2file(image_name, target_file, 'a')
+        
+        huvos_ratio, image_dict = infer(infer_path, label_path,
+                                        target_file, outdir, image_dict)
+        if huvos_ratio is not None:
+            huvos_case.append(huvos_ratio)
+            
+        case_dict[image_name] = image_dict
+            
+    return np.mean(huvos_case), case_dict
 
 def huvos_classify(huvos_ratio):
     labels = ["I", "II", "III", "IV"]
@@ -336,56 +361,45 @@ if __name__=='__main__':
     cases = [f"Case_{n}" for n in range(1, 11)]
     # cases = ["Case_6"]
     
+    metadatas = {}
+    outdir = args.outdir    
+    image_dir = args.images_dir
+    label_dir = args.labels_dir
+    print("Saving to dir:", outdir)
+    
+    pred_dict_path = os.path.join(outdir, 'pred_dict.json')
+    if os.path.isfile(pred_dict_path):
+        with open(pred_dict_path, 'r') as f:
+            metatdatas = json.load(f)
+            print("Load metadatas from:", pred_dict_path)
+    
     for case in os.listdir(args.labels_dir):
         if case in done_cases: continue
         if case not in cases: continue
         # if case != 'Case_1': continue
         
-        label_dir = os.path.join(args.labels_dir, case)
-        image_dir = os.path.join(args.images_dir, case)
+        print("="*5 + f"{case}" + "="*5)
+        case_label_folder = os.path.join(label_dir, case)
+        case_image_folder = os.path.join(image_dir, case)
+        
+        case_dict = {}
         
         # initialize working dir for each case
-        working_dir = os.path.join('.', 'infer', 'smooth_stacked', opt['name'], case)
-        os.makedirs(working_dir, exist_ok=True)
-        print("Working dir: ", working_dir)
-    
-        case_patch_counts = [0 for _ in range(len(color_map)-1)]
-        with open(os.path.join(working_dir, "result.txt"), "w") as f:
-            f.write(f"======={case}=======\n")
-            
-        huvos_case = []
+        # working_dir = os.path.join('.', 'infer', 'smooth_stacked', opt['name'], case)
+        case_outdir = os.path.join(outdir, opt['name'], case)
+        os.makedirs(case_outdir, exist_ok=True)
         
-        label_names = [n for n in os.listdir(label_dir) if ('.jpg' in n or '.png' in n)]
-
-        for label_name in label_names:
-            # if 'S15' not in label_name: continue
-            
-            # start
-            
-            if "x8" in label_name:
-                image_name = label_name.split("-x8")[0] + '.png'
-                upsample = True
-            else:
-                image_name = label_name.split("-labels")[0] + '.png'
-            
-            infer_path = os.path.join(image_dir, image_name)
-            label_path = os.path.join(label_dir, label_name)
-                
-            print("Process: ", infer_path)
-            slide_patch_counts, huvos_ratio = infer(infer_path, label_path)
-            if huvos_ratio is not None:
-                huvos_case.append(huvos_ratio)
-            
-            for i, class_count in enumerate(slide_patch_counts):
-                case_patch_counts[i] += slide_patch_counts[i]
-                
-        case_patch_percents = np.array(case_patch_counts) / np.sum(np.array(case_patch_counts))
+        target_file = os.path.join(outdir, f"stats_{case.lower()}.txt")
+        write2file(f"="*5 + f"{case}" + "="*5, target_file, 'w')
         
-        huvos_case = np.mean(huvos_case)
-        huvos_case = round(huvos_case*100, 1)
-        with open(os.path.join(working_dir, "result.txt"), "a") as f:
-            f.write(f"Total Necrosis on case: {huvos_case}%\n")
-            f.write(f"Huvos: {huvos_case}")
+        huvos_case, case_dict = process_folder(case_label_folder, case_image_folder, case_outdir, target_file, case_dict)
+        huvos_case = round(huvos_case * 100, 1)
+        write2file(f"Total Necrosis on case: {huvos_case}%", target_file, 'a')
+        write2file(f"Huvos: {huvos_classify(huvos_case)}", target_file, 'a')
+        
+        metadatas[case] = case_dict
+        with open(os.path.join(outdir, 'pred_dict.json'), 'w') as f:
+            json.dump(metadatas, f, indent=4)
         
             
             
