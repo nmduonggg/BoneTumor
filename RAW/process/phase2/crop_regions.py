@@ -91,7 +91,8 @@ def random_proportional_crops(image_path, labels_path, image_filename, label_fil
     # Resize the labels image to match the size of the input image
     global crop_index
     start_index = crop_index + 1
-    arr = generate_random_array(num_crops)
+    # arr = generate_random_array(num_crops)
+    arr = [0, 0, 0, 0, sz]
     metadata = []
     crops = []
     image_filename_no_ext = os.path.splitext(image_filename)[0]
@@ -182,10 +183,10 @@ if __name__ == "__main__":
 
     os.makedirs(args.output_folder, exist_ok=True)
     
-    skip_cases = ["Case_6", "Case_8", "Case_6_1", "Case_7", "Case_7_1", "Case_5_1", "Case_2_1"]
+    skip_cases = ["Case_6", "Case_8", "Case_6_1"]
     done_cases = []
-    # chosen_cases = [f"Case_{i}" for i in [1, 2, 3, 4, 5, 10]]
-    chosen_cases = ["Case_9"]
+    chosen_cases = [f"Case_{i}" for i in [1, 2, 3, 4, 5, 7, 10]]
+    # chosen_cases = ["Case_9"]
     print(f"Skip cases: {skip_cases}")
     
     
@@ -195,7 +196,7 @@ if __name__ == "__main__":
             init_meta = json.load(f)
         crop_index = init_meta[-1]['crop_index'] + 1
         
-    crop_index = 79571
+    # crop_index = 79571
         
     print("Crop index: ", crop_index)
 
