@@ -108,16 +108,19 @@ def read_percent_from_color(image):
 def open_img(image_path):
     img = cv2.imread(image_path)[:, :, :3]
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    h, w = img.shape[:2]
+    # pad_h = int(h % step)
+    # pad_w = int(w % step)
+    
+    pad_h = (step - h % step) if h % step != 0 else 0
+    pad_w = (step - w % step) if w % step != 0 else 0
+    img = np.pad(img, ((0, pad_h), (0, pad_w), (0,0)), mode='constant', constant_values=255)
     return img
 
 def prepare(infer_path):
     global crop_sz, step
     
     img = open_img(infer_path)
-    h, w = img.shape[:2]
-    pad_h = int(h % step)
-    pad_w = int(w % step)
-    img = np.pad(img, ((0, pad_h), (0, pad_w), (0,0)), mode='constant', constant_values=255)
     
     return [img, utils.crop(img, crop_sz, step)]
     
@@ -200,7 +203,7 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
             )
         im = transform(patch).float().unsqueeze(0)
         
-        if edge_score <= 5: # filter background
+        if edge_score <= 1: # filter background
             pred_im = np.zeros((small_h, small_w, 7))
             pred_im[:, :, 0] = 1e-9
             preds_list.append(pred_im)   # skip
@@ -234,6 +237,8 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
     # img_mask = np.expand_dims(get_nonwhite_mask(img), axis=-1)
     
     label = cv2.resize(open_img(label_path), (img.shape[1], img.shape[0]), cv2.INTER_NEAREST)
+    plt.imsave(os.path.join(outdir, f"{infer_name.split('.')[0]}_label.png"), label) 
+    
     label_mask = np.expand_dims(get_nonwhite_mask(label), axis=-1)
         
     prediction = prediction * label_mask + np.ones_like(prediction)*255*(1-label_mask)
@@ -290,7 +295,7 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
     huvos_case = []
     label_names = [n for n in os.listdir(label_folder) if ('.jpg' in n or '.png' in n)]
     for label_name in label_names:
-        if 'S7' not in label_name: continue
+        # if 'S7' not in label_name: continue
         if "x8" in label_name:
             image_name = label_name.split("-x8")[0] + '.png'
             upsample = True
@@ -314,8 +319,9 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
 
 
 if __name__=='__main__':
-    done_cases = [f"Case_{n}" for n in []]
-    cases = [f"Case_{n}" for n in range(1, 11)]
+    done_cases = [f"Case_{n}" for n in [1, 3, 4, 8, 9, 10]]
+    # cases = [f"Case_{n}" for n in range(6)]
+    cases = ["Case_6"]
     metadatas = {}
     
     outdir = args.outdir
@@ -330,7 +336,7 @@ if __name__=='__main__':
             print("Load metadatas from:", pred_dict_path)
     
     for case in os.listdir(args.labels_dir):
-        # if case in done_cases: continue
+        if case in done_cases: continue
         if case not in cases: continue
         
         print("="*5 + f" {case} " + "="*5)

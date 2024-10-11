@@ -319,6 +319,7 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
     huvos_case = []
     label_names = [n for n in os.listdir(label_folder) if ('.jpg' in n or '.png' in n)]
     for label_name in label_names:
+        if 'S10' not in label_name: continue
         if "x8" in label_name:
             image_name = label_name.split("-x8")[0] + '.png'
             upsample = True
@@ -376,7 +377,7 @@ if __name__=='__main__':
     for case in os.listdir(args.labels_dir):
         if case in done_cases: continue
         if case not in cases: continue
-        # if case != 'Case_1': continue
+        # if case != 'Case_10': continue
         
         print("="*5 + f"{case}" + "="*5)
         case_label_folder = os.path.join(label_dir, case)

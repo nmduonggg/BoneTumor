@@ -3,6 +3,7 @@ import json
 import numpy as np
 import cv2
 from tqdm import tqdm
+from sklearn.metrics import precision_recall_curve, average_precision_score
 
 color_map = [
     [255, 255, 255],    # background
@@ -37,6 +38,96 @@ def open_img(file):
     img = cv2.imread(file)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
+
+# def calculate_iou_per_class(pred_mask, gt_mask, class_label):
+#     """
+#     Calculate IoU for a specific class.
+    
+#     :param pred_mask: 2D array of predicted mask
+#     :param gt_mask: 2D array of ground truth mask
+#     :param class_label: Integer representing the class label
+#     :return: IoU value for the class
+#     """
+#     pred_mask=pred_mask.reshape(-1)
+#     gt_mask=gt_mask.reshape(-1)
+#     pred_class_mask = (pred_mask == class_label)
+#     gt_class_mask = (gt_mask == class_label)
+
+#     intersection = np.logical_and(pred_class_mask, gt_class_mask).sum()
+#     union = np.logical_or(pred_class_mask, gt_class_mask).sum()
+    
+#     if union == 0:
+#         return float('nan'), union  # Avoid division by zero
+#     iou = intersection / union
+#     return (iou, union)
+
+# def calculate_precision_recall(pred_mask, gt_mask, class_label):
+#     """
+#     Calculate Precision and Recall for a specific class.
+    
+#     :param pred_mask: 2D array of predicted mask
+#     :param gt_mask: 2D array of ground truth mask
+#     :param class_label: Integer representing the class label
+#     :return: precision, recall, average precision (AP)
+#     """
+#     pred_class_mask = (pred_mask == class_label).astype(int).flatten()
+#     gt_class_mask = (gt_mask == class_label).astype(int).flatten()
+
+#     precision, recall, _ = precision_recall_curve(gt_class_mask, pred_class_mask)
+#     ap = average_precision_score(gt_class_mask, pred_class_mask)
+    
+#     return precision, recall, ap
+
+# def evaluate_segmentation(pred_masks, gt_masks, class_labels):
+#     """
+#     Evaluate segmentation results for multiple classes and images.
+    
+#     :param pred_masks: List of 2D arrays of predicted masks
+#     :param gt_masks: List of 2D arrays of ground truth masks
+#     :param class_labels: List of class labels to evaluate
+#     :return: Dictionary of IoU, AP, and AR for each class
+#     """
+#     iou_per_class = {label: [] for label in class_labels}
+#     ap_per_class = {label: [] for label in class_labels}
+#     ar_per_class = {label: [] for label in class_labels}
+    
+#     for pred_mask, gt_mask in zip(pred_masks, gt_masks):
+#         for class_label in class_labels:
+#             # Calculate IoU for the class
+#             iou, union = calculate_iou_per_class(pred_mask, gt_mask, class_label)
+#             if union==0: continue
+#             if not np.isnan(iou):
+#                 iou_per_class[class_label].append(iou)
+            
+#             # Calculate Precision, Recall, and AP for the class
+#             precision, recall, ap = calculate_precision_recall(pred_mask, gt_mask, class_label)
+#             ap_per_class[class_label].append(ap)
+#             ar_per_class[class_label].append(np.mean(recall))  # Average Recall for the current image
+    
+#     # Compute mAP and mAR by averaging across all images
+#     results = {}
+#     for class_label in class_labels:
+#         results[class_label] = {
+#             'IoU': np.nanmean(iou_per_class[class_label]),
+#             'AP': np.mean(ap_per_class[class_label]),
+#             'AR': np.mean(ar_per_class[class_label])
+#         }
+    
+#     return results
+
+# def compare(y_true, y_pred, num_classes):
+#     class_labels = range(num_classes)
+#     class_wise_results = evaluate_segmentation(y_pred, y_true, class_labels)
+#     results = {
+#         'IoU': 0.,
+#         'AP': 0.,
+#         'AR': 0.}
+#     for met in results.keys():
+#         for c in class_wise_results.keys():
+#             results[met] += class_wise_results[c][met]
+#     for met in results.keys():
+#         results[met] /= len(class_wise_results.keys())
+#     return results
 
 def compare(y_true, y_pred, num_classes):
     """
@@ -108,8 +199,8 @@ def compare(y_true, y_pred, num_classes):
     return metrics
 
 if __name__=='__main__':
-    gt_folder = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS'
-    pred_folder = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/infer/smooth_old/UNI_lora_cls'
+    gt_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS/'
+    pred_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/infer/smooth_vit/ViT_baseline'
     
     case_names = [n for n in os.listdir(gt_folder) if os.path.isdir(os.path.join(gt_folder, n))]
     overall_metrics = {}
@@ -118,7 +209,7 @@ if __name__=='__main__':
     valid_cases = [f"Case_{i}" for i in [6, 8]]
     train_cases = [f"Case_{i}" for i in [1, 2, 3, 4, 5, 7, 9, 10]]
     
-    process_cases = train_cases + valid_cases
+    process_cases = valid_cases
     
     for case_name in tqdm(case_names, total=len(case_names)):
         if case_name not in process_cases: continue

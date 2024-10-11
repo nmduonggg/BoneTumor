@@ -145,19 +145,21 @@ def infer(image_filepath, label_filepath, size=256):
                     transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 ]
             )
-        im = transform(im_patch).float().unsqueeze(0)
+        im = transform(im_patch).float().unsqueeze(0)   # Bx3xHW
+        b, _, h, w = im.shape
         
         im = im.to(device)
         with torch.no_grad():
             pred = model(im)
         
-        pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
-        pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
-        
-        preds_list.append(pred_im)
+        # pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
+        # pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
+        pred_im = torch.ones((h, w, 1)) * pred.cpu().reshape(1, 1, -1)    # -> CxHxW
+        preds_list.append(pred_im.numpy())
     
-    pred = utils.combine(preds_list, num_h, num_w, h, w, crop_sz, step, 3)
-    pred = cv2.resize(pred, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
+    pred = utils.combine(preds_list, num_h, num_w, h, w, crop_sz, step, len(color_map))
+    # pred = cv2.resize(pred, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
+    pred = cv2.resize(pred, (size, size))
     
     return pred, label, img
 

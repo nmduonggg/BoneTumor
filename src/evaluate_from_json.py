@@ -61,9 +61,11 @@ def write2excel(df, exl_path):
 
 
 if __name__=='__main__':
-    gt_path = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS/gt_dict.json'
-    pred_path = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/infer/smooth_retrain/pred_dict.json'
-    xlsx_path = './smooth_train.xlsx'
+    gt_path = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS/gt_dict.json'
+    pred_path = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/infer/smooth_vit/pred_dict.json'
+    xlsx_path = './smooth_vit.xlsx'
+    
+    cases = ["Case_6", "Case_8"]
     # Create an empty list to store the rows for the DataFrame
     data = []
     
@@ -71,10 +73,12 @@ if __name__=='__main__':
     pred_data = read_json(pred_path)
     
     for case, gt_dict in gt_data.items():
+        if case not in cases: continue
         if case not in pred_data: continue
         pred_dict = pred_data[case]
         
         for img_name in gt_dict.keys():
+            print(img_name)
             gt_values = {k: round(v, 4) for k, v in gt_dict[img_name].items()}
             pred_values = {k: round(v, 4) for k, v in pred_dict[img_name].items()}
             
