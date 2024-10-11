@@ -21,13 +21,13 @@ def write2file(metadata, metadata_file, mode='a'):
         json.dump(metadata, f, indent=4, cls=NpEncoder)
         
 def laplacian_score(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    laplac = cv2.Laplacian(gray, cv2.CV_16S, ksize=3)
-    mask_img = cv2.convertScaleAbs(laplac)
+    grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, thresholded = cv2.threshold(grayscale, 240, 255, cv2.THRESH_BINARY)
+    mask_img = (thresholded==255).astype('int')
     return mask_img
 
 def limit_coordinates(binary_img):
-    return np.column_stack(np.where(binary_img > 1))
+    return np.column_stack(np.where(binary_img < 1))
 
 def generate_random_array(n, sz=5):
     arr = np.zeros(sz, dtype=int)  # Initialize an array of zeros with size `sz`
@@ -93,6 +93,7 @@ def random_proportional_crops(image_path, labels_path, image_filename, label_fil
     start_index = crop_index + 1
     # arr = generate_random_array(num_crops)
     arr = [0, 0, 0, 0, num_crops]
+    # arr = [0, num_crops]
     metadata = []
     crops = []
     image_filename_no_ext = os.path.splitext(image_filename)[0]
@@ -106,12 +107,12 @@ def random_proportional_crops(image_path, labels_path, image_filename, label_fil
     
     image = cv2.imread(image_path)
     original_height, original_width = image.shape[:2]
+    # print(image.shape)
     del image
     
     labels = cv2.imread(labels_path)
     labels = cv2.resize(labels, (original_width, original_height), interpolation=cv2.INTER_NEAREST)
     options = limit_coordinates(laplacian_score(labels))
-    print(options.shape)
     
     for i, n in enumerate(arr):
         if n==0: continue
@@ -119,8 +120,10 @@ def random_proportional_crops(image_path, labels_path, image_filename, label_fil
         print("Crop size: ", crop_size)
         valid_crop_count = 0   
         condition = (options[:, 0] < original_width - crop_size + 1) & (options[:, 1] < original_height - crop_size + 1)
+        if condition.mean() == 0: continue
         options = options[condition]
         
+        # in case the image is small, we have to allow overlaps
         indices = np.random.choice(range(options.shape[0]), n, replace=False)
         
         for idx in tqdm(indices, total=indices.shape[0]):
@@ -187,10 +190,9 @@ if __name__ == "__main__":
     
     skip_cases = ["Case_6", "Case_8", "Case_6_1"]
     done_cases = []
-    chosen_cases = [f"Case_{i}" for i in [1, 2, 3, 4, 5, 7, 10]]
-    # chosen_cases = ["Case_9"]
+    chosen_cases = [f"Case_{i}" for i in range(1,11)]
+    # chosen_cases = ["Case_10"]
     print(f"Skip cases: {skip_cases}")
-    
     
     crop_index = 0
     if args.start_metadata is not None:
@@ -220,6 +222,7 @@ if __name__ == "__main__":
         write2file(metadata, metadata_file, 'w')
         
         for label_name in os.listdir(labels_folder):
+            
             if 'slide-' not in label_name: continue
             print("Processing: ", label_name)
             
@@ -235,16 +238,12 @@ if __name__ == "__main__":
 
             image_path = os.path.join(images_folder, img_name)
             label_path = os.path.join(labels_folder, label_name)
+            
+            assert os.path.isfile(label_path), label_path
             result_metadata = random_proportional_crops(image_path, label_path, img_name, label_name, output_folder, args.n)
             metadata.extend(result_metadata)
             write2file(metadata, metadata_file, 'w')
         
         # Save the metadata to a JSON file
         write2file(metadata, metadata_file, 'w')
-
-
-    # # Save the metadata to a JSON file
-    # metadata_file = os.path.join(args.output_folder, 'metadata.json')
-    # with open(metadata_file, 'w') as f:
-    #     json.dump(metadata, f, indent=4)
 
