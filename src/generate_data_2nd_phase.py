@@ -154,7 +154,7 @@ def infer(image_filepath, label_filepath, size=256):
         
         # pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
         # pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
-        pred_im = torch.ones((h, w, 1)) * pred.cpu().reshape(1, 1, -1)    # -> CxHxW
+        pred_im = torch.ones((h, w, 1)) * pred.cpu().reshape(1, 1, -1)    # -> HxWxC
         preds_list.append(pred_im.numpy())
     
     pred = utils.combine(preds_list, num_h, num_w, h, w, crop_sz, step, len(color_map))
@@ -217,7 +217,8 @@ if __name__=='__main__':
             
             pred_image, label_image, img_image = infer(image_filepath, label_filepath)
             
-            plt.imsave(os.path.join(input_folder, f"{crop_index}.png"), pred_image)
+            # plt.imsave(os.path.join(input_folder, f"{crop_index}.png"), pred_image)
+            np.save(os.path.join(input_folder, f"{crop_index}.npy"), pred_image)
             plt.imsave(os.path.join(label_folder, f"{crop_index}.png"), label_image)
             plt.imsave(os.path.join(img_folder, f"{crop_index}.png"), img_image)
             

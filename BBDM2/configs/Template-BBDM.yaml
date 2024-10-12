@@ -1,43 +1,45 @@
 # Brownian Bridge Diffusion Model Template(Pixel Space)
-runner: "BBDMRunner"
+runner: "BBDMRunner_PathologyDiscrete"
 training:
   n_epochs: 200
   n_steps: 400000
-  save_interval: 20
-  sample_interval: 2
-  validation_interval: 20
+  save_interval: 1
+  sample_interval: 1
+  validation_interval: 1
   accumulate_grad_batches: 2
+  wandb: True
+  wandb_key: '60fd0a73c2aefc531fa6a3ad0d689e3a4507f51c'
 
 testing:
-  clip_denoised: True
-  sample_num: 5
+  clip_denoised: False
+  sample_num: 1
 
 data:
-  dataset_name: 'dataset_name'
-  dataset_type: 'custom_aligned'
+  dataset_name: 'PredIm-1-ysubx-concat-with9-discrete'
+  dataset_type: 'custom_aligned_refine_concat_discrete'
   dataset_config:
-    dataset_path: 'dataset_path'
-    image_size: 256
-    channels: 3
+    dataset_path: '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
+    image_size: 64
+    channels: 7
     to_normal: True
     flip: False
   train:
-    batch_size: 8
+    batch_size: 16
     shuffle: True
   val:
-    batch_size: 8
+    batch_size: 32
     shuffle: True
   test:
     batch_size: 8
     # shuffle: False
 
 model:
-  model_name: "BrownianBridge" # part of result path
-  model_type: "BBDM" # specify a module
+  model_name: "BrownianBridge-Pathology" # part of result path
+  model_type: "BBDM-Pathology" # specify a module
   latent_before_quant_conv: False
   normalize_latent: False
   only_load_latent_mean_std: False
-  # model_load_path:  # model checkpoint path
+  model_load_path: "/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-1-ysubx-concat-with9-discrete/BrownianBridge-Pathology/checkpoint/top_model_epoch_3.pth" # model checkpoint path
   # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
   EMA:
@@ -47,8 +49,8 @@ model:
     start_ema_step: 30000
 
   CondStageParams:
-    n_stages: 2
-    in_channels: 3
+    n_stages: 0
+    in_channels: 10
     out_channels: 3
 
   BB:
@@ -72,7 +74,7 @@ model:
 
       skip_sample: True
       sample_type: 'linear' # options {"linear", "sin"}
-      sample_step: 200
+      sample_step: 20
 
       num_timesteps: 1000 # timesteps
       eta: 1.0 # DDIM reverse process eta
@@ -80,9 +82,9 @@ model:
 
       UNetParams:
         image_size: 64
-        in_channels: 6
-        model_channels: 128
-        out_channels: 3
+        in_channels: 17
+        model_channels: 64
+        out_channels: 7
         num_res_blocks: 2
         attention_resolutions: !!python/tuple
           - 32
@@ -98,6 +100,6 @@ model:
         num_head_channels: 64
         use_scale_shift_norm: True
         resblock_updown: True
-        use_spatial_transformer: False
-        context_dim:
+        use_spatial_transformer: True
+        context_dim: 10
         condition_key: "SpatialRescaler" # options {"SpatialRescaler", "first_stage", "nocond"}

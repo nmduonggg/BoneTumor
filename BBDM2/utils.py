@@ -5,6 +5,7 @@ import omegaconf.dictconfig
 from Register import Registers
 from runners.DiffusionBasedModelRunners.BBDMRunner import BBDMRunner
 from runners.DiffusionBasedModelRunners.BBDMRunner_PathologyContext import BBDMRunner_PathologyContext
+from runners.DiffusionBasedModelRunners.BBDMRunner_PathologyDiscrete import BBDMRunner_PathologyDiscrete
 
 
 def dict2namespace(config):

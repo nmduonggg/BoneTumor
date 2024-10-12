@@ -26,9 +26,38 @@ from tqdm.autonotebook import tqdm
 from runners.base.EMA import EMA
 from runners.utils import make_save_dirs, make_dir, get_dataset, remove_file
 
+color_map = [
+    [255, 255, 255],    # background
+    [0, 128, 0],    # Viable tumor
+    [255, 143, 204],    # Necrosis
+    [255, 0, 0],    # Fibrosis/Hyalination
+    [0, 0, 0],  # Hemorrhage/ Cystic change
+    [165, 42, 42],  # Inflammatory
+    [0, 0, 255]]    # Non-tumor tissue
 
-@Registers.runners.register_with_name('BBDMRunner_PathologyContext')
-class BBDMRunner_PathologyContext(DiffusionBaseRunner):
+def idx2label(image):
+    b, c, h, w = image.shape
+    output = torch.zeros((b, 3, h, w)).to(image.device)
+    masks = 0.
+    image = torch.argmax(image, dim=1, keepdim=True)
+    for idx, color in enumerate(color_map):
+        color = torch.tensor(color).reshape(-1, 1, 1).to(image.device) / 255.
+        mask = torch.all(torch.abs(image - idx) < 1e-9, axis=1).unsqueeze(1).to(image.device) # bx1xhxw
+        # mask = mask.unsqueeze(0) # 1xHxW
+        # print(mask.shape)
+        # print(output.shape)
+        # output[mask] = color
+        class_mask = torch.tensor(color).reshape(1, -1, 1, 1).to(image.device)
+        output = output * (~mask) + class_mask * mask 
+        # masks += mask.float().mean()
+    # print(masks)
+
+
+    return output
+
+
+@Registers.runners.register_with_name("BBDMRunner_PathologyDiscrete")
+class BBDMRunner_PathologyDiscrete(DiffusionBaseRunner):
     def __init__(self, config):
         super().__init__(config)
         self.use_wandb = config.training.wandb
@@ -234,17 +263,23 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
             if additional_info.__contains__('recloss_xy'):
                 self.writer.add_scalar(f'recloss_xy/{stage}', additional_info['recloss_xy'], step)
                 
-        x_latent_recon = additional_info['x0_recon'].cpu()
-        x_latent = additional_info['x0'].cpu()
-        diff = (x_latent_recon - x_latent).pow(2).mean()
-        psnr = (10 * torch.log10(255**2 / diff)).item()
+        # x_latent_recon = torch.argmax(additional_info['x0_recon'].cpu(), dim=1).reshape(-1)
+        # x_latent = torch.argmax(additional_info['x0'].cpu(), dim=1).reshape(-1)
+        # acc = (x_latent_recon == x_latent)
         
-        if write and self.is_main_process:
-            self.writer.add_scalar(f'psnr/{stage}', psnr, step)
+        # if write and self.is_main_process:
+        #     self.writer.add_scalar(f'psnr/{stage}', psnr, step)
         
-        del additional_info, x, x_cond, x_cont
-                
-        return loss, psnr
+        # del additional_info, x, x_cond, x_cont
+        acc = 0.
+        if stage!='train':
+    
+            sample = net.sample(x_cond, x_cont, clip_denoised=self.config.testing.clip_denoised)
+            sample = torch.argmax(sample, dim=1, keepdim=True).reshape(-1).cpu()
+            x = torch.argmax(x.cpu(), dim=1, keepdim=True).reshape(-1)
+            
+            acc = (sample==x).float().mean().cpu().item()
+        return loss, acc
 
     @torch.no_grad()
     def sample(self, net, batch, sample_path, stage='train'):
@@ -275,6 +310,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         #
         # sample = samples[-1]
         sample = net.sample(x_cond, x_cont, clip_denoised=self.config.testing.clip_denoised).to('cpu')
+        sample = idx2label(sample)
         
         image_grid = get_image_grid(sample, grid_size, to_normal=self.config.data.dataset_config.to_normal)
         im = Image.fromarray(image_grid)
@@ -282,19 +318,21 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         if stage != 'test':
             self.writer.add_image(f'{stage}_skip_sample', image_grid, self.global_step, dataformats='HWC')
 
+        x_cond = idx2label(x_cond)
         image_grid = get_image_grid(x_cond.to('cpu'), grid_size, to_normal=self.config.data.dataset_config.to_normal)
         im = Image.fromarray(image_grid)
         im.save(os.path.join(sample_path, 'condition.png'))
         if stage != 'test':
             self.writer.add_image(f'{stage}_condition', image_grid, self.global_step, dataformats='HWC')
 
+        x = idx2label(x)
         image_grid = get_image_grid(x.to('cpu'), grid_size, to_normal=self.config.data.dataset_config.to_normal)
         im = Image.fromarray(image_grid)
         im.save(os.path.join(sample_path, 'ground_truth.png'))
         if stage != 'test':
             self.writer.add_image(f'{stage}_ground_truth', image_grid, self.global_step, dataformats='HWC')
             
-        image_grid = get_image_grid(x_cont[:, 3:, ...].to('cpu'), grid_size, to_normal=self.config.data.dataset_config.to_normal)
+        image_grid = get_image_grid(x_cont[:, 7:, ...].to('cpu'), grid_size, to_normal=self.config.data.dataset_config.to_normal)
         im = Image.fromarray(image_grid)
         im.save(os.path.join(sample_path, 'context.png'))
         if stage != 'test':
@@ -345,9 +383,9 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         step = 0
         loss_sum = 0.
         dloss_sum = 0.
-        psnr_sum = 0.
+        acc_sum = 0.
         for val_batch in pbar:
-            loss, psnr = self.loss_fn(net=self.net,
+            loss, acc = self.loss_fn(net=self.net,
                                 batch=val_batch,
                                 epoch=epoch,
                                 step=step,
@@ -355,7 +393,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                 stage='val',
                                 write=False)
             loss_sum += loss.cpu().detach()
-            psnr_sum += psnr
+            acc_sum += acc
             if len(self.optimizer) > 1:
                 loss = self.loss_fn(net=self.net,
                                     batch=val_batch,
@@ -367,10 +405,10 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 dloss_sum += loss
             step += 1
         average_loss = loss_sum / step
-        average_psnr = psnr_sum / step
+        average_acc = acc_sum / step
         if self.is_main_process:
             self.writer.add_scalar(f'val_epoch/loss', average_loss, epoch)
-            self.writer.add_scalar(f'val_epoch/psnr', average_psnr, epoch)
+            self.writer.add_scalar(f'val_epoch/acc', average_acc, epoch)
             if len(self.optimizer) > 1:
                 average_dloss = dloss_sum / step
                 self.writer.add_scalar(f'val_dloss_epoch/loss', average_dloss, epoch)
@@ -378,7 +416,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
         
         del loss
         
-        return average_loss, average_psnr
+        return average_loss, average_acc
                         
     def train(self):
         self.logger(self.__class__.__name__)
@@ -444,13 +482,13 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                     # if self.is_main_process == 0:
                     with torch.no_grad():
                         self.logger("validating epoch...")
-                        average_loss, average_psnr = self.validation_epoch(val_loader, epoch)
+                        average_loss, average_acc = self.validation_epoch(val_loader, epoch)
                         # torch.cuda.empty_cache()
                         self.logger("validating epoch success")
                         
                         val_metric = {
                             'val_loss': average_loss,
-                            'val_psnr': average_psnr,
+                            'val_acc': average_acc,
                         }
                         if self.use_wandb: wandb.log(val_metric)
                         
@@ -496,18 +534,18 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                 if top_key not in self.topk_checkpoints:
                                     print('top key not in topk_checkpoints')
                                     self.topk_checkpoints[top_key] = {"loss": average_loss,
-                                                                      'psnr': average_psnr,
+                                                                      'acc': average_acc,
                                                                       'model_ckpt_name': model_ckpt_name,
                                                                       'optim_sche_ckpt_name': optim_sche_ckpt_name}
 
-                                    print(f"saving top checkpoint: average_loss={average_loss} average_psnr={average_psnr} epoch={epoch + 1}")
+                                    print(f"saving top checkpoint: average_loss={average_loss} average_acc={average_acc} epoch={epoch + 1}")
                                     torch.save(model_states,
                                                os.path.join(self.config.result.ckpt_path, model_ckpt_name))
                                     torch.save(optimizer_scheduler_states,
                                                os.path.join(self.config.result.ckpt_path, optim_sche_ckpt_name))
                                 else:
                                     # if average_loss < self.topk_checkpoints[top_key]["loss"]:
-                                    if average_psnr > self.topk_checkpoints[top_key]['psnr']:
+                                    if average_acc > self.topk_checkpoints[top_key]['acc']:
                                         print("remove " + self.topk_checkpoints[top_key]["model_ckpt_name"])
                                         remove_file(os.path.join(self.config.result.ckpt_path,
                                                                  self.topk_checkpoints[top_key]['model_ckpt_name']))
@@ -515,10 +553,10 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                                                                  self.topk_checkpoints[top_key]['optim_sche_ckpt_name']))
 
                                         print(
-                                            f"saving top checkpoint: average_loss={average_loss} average_psnr={average_psnr} epoch={epoch + 1}")
+                                            f"saving top checkpoint: average_loss={average_loss} average_acc={average_acc} epoch={epoch + 1}")
 
                                         self.topk_checkpoints[top_key] = {"loss": average_loss,
-                                                                          "psnr": average_psnr,
+                                                                          "acc": average_acc,
                                                                           'model_ckpt_name': model_ckpt_name,
                                                                           'optim_sche_ckpt_name': optim_sche_ckpt_name}
 
@@ -539,7 +577,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 start_time = time.time()
                 
                 train_losses = []
-                train_psnrs = []
+                train_accs = []
                 for train_batch in pbar:
                     self.global_step += 1
                     self.net.train()
@@ -547,7 +585,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                     losses = []
                     for i in range(len(self.optimizer)):
                         # pdb.set_trace()
-                        loss, psnr = self.loss_fn(net=self.net,
+                        loss, acc = self.loss_fn(net=self.net,
                                             batch=train_batch,
                                             epoch=epoch,
                                             step=self.global_step,
@@ -566,7 +604,7 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                             dist.reduce(loss, dst=0, op=dist.ReduceOp.SUM)
                         losses.append(loss.detach().cpu().mean())
                         train_losses.append(loss.detach().cpu().mean())
-                        train_psnrs.append(psnr)
+                        train_accs.append(acc)
 
                     if self.use_ema and self.global_step % (self.update_ema_interval*accumulate_grad_batches) == 0:
                         self.step_ema()
@@ -606,9 +644,9 @@ class BBDMRunner_PathologyContext(DiffusionBaseRunner):
                 self.logger("training time: " + str(datetime.timedelta(seconds=elapsed_rounded)))
                 
                 train_loss = np.mean(train_losses)
-                train_psnr = np.mean(train_psnrs)
+                train_acc = np.mean(train_accs)
                 train_metrics = {'train_loss': train_loss,
-                                 'train_psnr': train_psnr}
+                                 'train_acc': train_acc}
                 if self.use_wandb:
                     wandb.log(train_metrics)
                 
