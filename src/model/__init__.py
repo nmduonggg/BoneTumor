@@ -8,6 +8,7 @@ from .MobileNetV2_baseline import MobileNetV2_baseline
 from .Transformer_reorder import TransformerReorder
 from .Stacked_model import StackedModel
 from .StackedDiffusion_model import StackedDiffusionModel
+from .DiscreteStackedDiffusion_model import DiscreteStackedDiffusionModel
 
 def create_model(opt):
     if opt['network_G']['which_model_G'] == 'uni_lora_cls':
@@ -25,5 +26,7 @@ def create_model(opt):
         return StackedModel(opt['network_G']['out_nc'])
     elif opt['network_G']['which_model_G'] == 'stacked_bbdm':
         return StackedDiffusionModel(opt)
+    elif opt['network_G']['which_model_G'] == 'discrete_stacked_bbdm':
+        return DiscreteStackedDiffusionModel(opt)
     else:
         raise NotImplementedError('Model [{:s}] is not recognized.'.format(opt['network_G']['which_model_G']))

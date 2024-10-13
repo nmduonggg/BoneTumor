@@ -26,6 +26,7 @@ def apply_threshold_mapping(image):
         mask = np.all(np.abs(image - color) < tolerance, axis=-1)
         # output[mask] = color
         output[mask] = idx
+        if idx==2: print(mask.mean())
 
     return output
 
@@ -206,7 +207,7 @@ if __name__=='__main__':
     overall_metrics = {}
     cnt = 0
     
-    valid_cases = [f"Case_{i}" for i in [6, 8]]
+    valid_cases = [f"Case_{i}" for i in [6]]
     train_cases = [f"Case_{i}" for i in [1, 2, 3, 4, 5, 7, 9, 10]]
     
     process_cases = valid_cases
@@ -222,15 +223,18 @@ if __name__=='__main__':
             
             if "x8" in label_name:
                 image_name = label_name.split("-x8")[0] + '_pred.png'
+                gt_name1 = label_name.split("-x8")[0] + '_label.png'
                 upsample = True
             else:
                 image_name = label_name.split("-labels")[0] + '_pred.png'
+                gt_name1 = label_name.split("-labels")[0] + '_label.png'
             
             pred_image_path = os.path.join(pred_case_folder, image_name)
             if not os.path.isfile(pred_image_path): continue
             pred_image = open_img(pred_image_path)
             
-            gt_image_path = os.path.join(gt_case_folder, label_name)
+            # gt_image_path = os.path.join(gt_case_folder, label_name)
+            gt_image_path = os.path.join(pred_case_folder, gt_name1)
             gt_image = open_img(gt_image_path)
             
             pred_image = cv2.resize(pred_image, (gt_image.shape[1], gt_image.shape[0]), interpolation=cv2.INTER_NEAREST)
