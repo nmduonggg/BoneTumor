@@ -124,27 +124,26 @@ def infer(image_filepath, label_filepath, size=256):
     label_patches = preprocess_elems[0]
     assert(len(image_patches)==len(label_patches))
     
-    img = cv2.resize(img, (size, size)).astype('uint8')
-    label = cv2.resize(label, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
+    # img = cv2.resize(img, (size, size)).astype('uint8')
+    # label = cv2.resize(label, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
     
     preds_list = []
-    
+    transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+            ]
+        )
     for im_patch, gt_patch in zip(image_patches, label_patches):
         
         assert(im_patch.size == gt_patch.size)
-        im_patch, gt_patch = fix_label_image(im_patch, gt_patch)
+        # im_patch, gt_patch = fix_label_image(im_patch, gt_patch)
         
         bg = np.ones((crop_sz, crop_sz, 3), 'float32') * 255
         r, c, _ = im_patch.shape
         bg[:r, :c, :] = im_patch
         im_patch = bg.astype(np.uint8)
         
-        transform = transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                ]
-            )
         im = transform(im_patch).float().unsqueeze(0)   # Bx3xHW
         b, _, h, w = im.shape
         
@@ -159,7 +158,7 @@ def infer(image_filepath, label_filepath, size=256):
     
     pred = utils.combine(preds_list, num_h, num_w, h, w, crop_sz, step, len(color_map))
     # pred = cv2.resize(pred, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
-    pred = cv2.resize(pred, (size, size))
+    # pred = cv2.resize(pred, (size, size))
     
     return pred, label, img
 
@@ -189,12 +188,12 @@ if __name__=='__main__':
     #----------------------------------------------# processing
     
     done_cases = [f"Case_{i}" for i in []]
-    process_cases = ["Case_9"]
+    # process_cases = ["Case_9"]
     
     for case_name in os.listdir(args.data_dir):
         if "Case" not in case_name: continue
         if case_name in done_cases: continue
-        if case_name not in process_cases: continue
+        # if case_name not in process_cases: continue
         
         print(f"==========={case_name}===========")
         case_dir = os.path.join(args.data_dir, case_name)
@@ -218,7 +217,7 @@ if __name__=='__main__':
             pred_image, label_image, img_image = infer(image_filepath, label_filepath)
             
             # plt.imsave(os.path.join(input_folder, f"{crop_index}.png"), pred_image)
-            np.save(os.path.join(input_folder, f"{crop_index}.npy"), pred_image)
+            np.save(os.path.join(input_folder, f"{crop_index}.npy"), pred_image)    # hxwx7
             plt.imsave(os.path.join(label_folder, f"{crop_index}.png"), label_image)
             plt.imsave(os.path.join(img_folder, f"{crop_index}.png"), img_image)
             
@@ -229,5 +228,7 @@ if __name__=='__main__':
                 write2file(original_data_list, metadata_outfile, 'w')
                 print("[INFO] Write metadata")
             cnt += 1
+            
+        print(f"{case_name} - {cnt} images")
                 
                 
