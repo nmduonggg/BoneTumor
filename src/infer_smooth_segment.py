@@ -191,6 +191,7 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
     preds_list, class_list = [], []
     class_counts = [0 for _ in range(7)]
     for i, patch in tqdm(enumerate(patches_list), total=len(patches_list)):
+        
         bg = np.ones((crop_sz, crop_sz, 3), 'float32') * 255
         r, c, _ = patch.shape
         bg[:r, :c, :] = patch
@@ -201,6 +202,7 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
         transform = transforms.Compose(
                 [
                     transforms.ToTensor(),
+                    transforms.Resize((256, 256)),
                     transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 ]
             )
@@ -215,8 +217,9 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
         im = im.to(device)
         with torch.no_grad():
             pred = model(im)
+        pred = F.interpolate(pred, (small_h, small_w)).permute(0, 2, 3, 1)
         pred = torch.softmax(pred, dim=-1).cpu().squeeze(0).numpy()
-        pred = np.ones((small_h, small_w, 7)) * pred
+        # pred = np.ones((small_h, small_w, 7)) * pred
         preds_list.append(pred)
     
     kwargs['sr_list'] = preds_list

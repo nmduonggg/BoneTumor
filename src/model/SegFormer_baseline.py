@@ -196,8 +196,12 @@ class Segformer(nn.Module):
         )
 
     def forward(self, x):
+        b, c, h, w = x.shape
         layer_outputs = self.mit(x, return_layer_outputs = True)
 
         fused = [to_fused(output) for output, to_fused in zip(layer_outputs, self.to_fused)]
         fused = torch.cat(fused, dim = 1)
-        return self.to_segmentation(fused)
+        # print(fused.shape)
+        out = self.to_segmentation(fused)
+        out = F.interpolate(out, size = (h, w), mode = 'bilinear', align_corners = False)
+        return out

@@ -21,7 +21,7 @@ datasets:
     batch_size: 64
     balance: False
     augment: False
-    n_workers: 20
+    n_workers: 40
 
   valid:
     type: valid
@@ -34,8 +34,8 @@ datasets:
     width: 1024
     balance: False
     augment: False
-    batch_size: 128
-    n_workers: 20
+    batch_size: 256
+    n_workers: 40
 
   test:
     type: test
