@@ -92,7 +92,7 @@ def random_proportional_crops(image_path, labels_path, image_filename, label_fil
     global crop_index
     start_index = crop_index + 1
     # arr = generate_random_array(num_crops)
-    arr = [0, 0, 0, 0, num_crops]
+    arr = [0, 0, 0, num_crops]
     # arr = [0, num_crops]
     metadata = []
     crops = []
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     os.makedirs(args.output_folder, exist_ok=True)
     
-    skip_cases = ["Case_6", "Case_8", "Case_6_1"]
+    skip_cases = ["Case_6", "Case_8", "Case_6_1", "Case_7_1"]
     done_cases = []
     chosen_cases = [f"Case_{i}" for i in range(1,11)]
     # chosen_cases = ["Case_10"]

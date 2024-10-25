@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append('/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2')
+sys.path.append('/home/user01/aiotlab/nmduong/BoneTumor/BBDM2')
 
 import torch  
 import torch.nn as nn  
@@ -8,12 +8,12 @@ import torch.nn.functional as F
 
 import timm
 import loralib as lora
-from huggingface_hub import hf_hub_download
+# from huggingface_hub import hf_hub_download
 import numpy as np
 import matplotlib.pyplot as plt
 import data.utils as data_utils
 
-from model import TransformerReorder, UNI_lora_cls
+from model import UNI_lora_cls
 from model.bbdm.BrownianBridge.LatentBrownianBridgeModel_PathologyContext import LatentBrownianBridgeModel_Pathology as LBBDM
 
 

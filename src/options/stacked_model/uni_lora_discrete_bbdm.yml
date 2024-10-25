@@ -76,7 +76,7 @@ logger:
 
 ###---------------------------------------###
 
-# # Brownian Bridge Diffusion Model Template(Pixel Space)
+# Brownian Bridge Diffusion Model Template(Pixel Space)
 bbdm:
   runner: "BBDMRunner_PathologyDiscrete"
   training:
@@ -95,18 +95,18 @@ bbdm:
 
   data:
     dataset_name: 'PredIm-1-ysubx-concat-with9-discrete'
-    dataset_type: 'custom_aligned_refine_concat_discrete'
+    dataset_type: 'custom_aligned_refine_concat_discrete_vector'
     dataset_config:
-      dataset_path: '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE'
+      dataset_path: '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2/'
       image_size: 64
       channels: 7
       to_normal: True
       flip: False
     train:
-      batch_size: 16
+      batch_size: 128
       shuffle: True
     val:
-      batch_size: 32
+      batch_size: 2
       shuffle: True
     test:
       batch_size: 8
@@ -118,7 +118,7 @@ bbdm:
     latent_before_quant_conv: False
     normalize_latent: False
     only_load_latent_mean_std: False
-    model_load_path: "/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-1-ysubx-concat-with9-discrete/BrownianBridge-Pathology/checkpoint/top_model_epoch_3.pth" # model checkpoint path
+    # model_load_path: "/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-1-ysubx-concat-with9-discrete/BrownianBridge-Pathology/checkpoint/top_model_epoch_3.pth" # model checkpoint path
     # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
     EMA:
@@ -136,7 +136,7 @@ bbdm:
       optimizer:
         weight_decay: 0.000
         optimizer: 'Adam'
-        lr: 1.e-4
+        lr: 3.e-4
         beta1: 0.9
 
       lr_scheduler:
@@ -156,13 +156,13 @@ bbdm:
         sample_step: 20
 
         num_timesteps: 1000 # timesteps
-        eta: 1.0 # DDIM reverse process eta
-        max_var: 1.0 # maximum variance
+        eta: 0.0 # DDIM reverse process eta
+        max_var: 0.5 # maximum variance
 
         UNetParams:
           image_size: 64
           in_channels: 17
-          model_channels: 64
+          model_channels: 128
           out_channels: 7
           num_res_blocks: 2
           attention_resolutions: !!python/tuple

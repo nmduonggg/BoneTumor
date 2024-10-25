@@ -1,0 +1,700 @@
+ERROR: Unable to locate a modulefile for 'cuda/11.4'
+no change     /home/user01/miniconda3/condabin/conda
+no change     /home/user01/miniconda3/bin/conda
+no change     /home/user01/miniconda3/bin/conda-env
+no change     /home/user01/miniconda3/bin/activate
+no change     /home/user01/miniconda3/bin/deactivate
+no change     /home/user01/miniconda3/etc/profile.d/conda.sh
+no change     /home/user01/miniconda3/etc/fish/conf.d/conda.fish
+no change     /home/user01/miniconda3/shell/condabin/Conda.psm1
+no change     /home/user01/miniconda3/shell/condabin/conda-hook.ps1
+no change     /home/user01/miniconda3/lib/python3.12/site-packages/xontrib/conda.xsh
+no change     /home/user01/miniconda3/etc/profile.d/conda.csh
+no change     /home/user01/.bashrc
+No action taken.
+Start to activate glamm
+Sat Oct  5 18:37:13 2024       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 470.141.03   Driver Version: 470.141.03   CUDA Version: 11.4     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA A100-SXM...  On   | 00000000:87:00.0 Off |                    0 |
+| N/A   37C    P0    64W / 400W |      0MiB / 81251MiB |      0%      Default |
+|                               |                      |             Disabled |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+Number of classes:  7
+Number of classes:  7
+Number of classes:  7
+tile_encoder.cls_token
+tile_encoder.pos_embed
+tile_encoder.patch_embed.proj.weight
+tile_encoder.patch_embed.proj.bias
+tile_encoder.blocks.0.norm1.weight
+tile_encoder.blocks.0.norm1.bias
+tile_encoder.blocks.0.attn.qkv.weight
+tile_encoder.blocks.0.attn.qkv.bias
+tile_encoder.blocks.0.attn.proj.weight
+tile_encoder.blocks.0.attn.proj.bias
+tile_encoder.blocks.0.ls1.gamma
+tile_encoder.blocks.0.norm2.weight
+tile_encoder.blocks.0.norm2.bias
+tile_encoder.blocks.0.mlp.fc1.weight
+tile_encoder.blocks.0.mlp.fc1.bias
+tile_encoder.blocks.0.mlp.fc2.weight
+tile_encoder.blocks.0.mlp.fc2.bias
+tile_encoder.blocks.0.ls2.gamma
+tile_encoder.blocks.1.norm1.weight
+tile_encoder.blocks.1.norm1.bias
+tile_encoder.blocks.1.attn.qkv.weight
+tile_encoder.blocks.1.attn.qkv.bias
+tile_encoder.blocks.1.attn.proj.weight
+tile_encoder.blocks.1.attn.proj.bias
+tile_encoder.blocks.1.ls1.gamma
+tile_encoder.blocks.1.norm2.weight
+tile_encoder.blocks.1.norm2.bias
+tile_encoder.blocks.1.mlp.fc1.weight
+tile_encoder.blocks.1.mlp.fc1.bias
+tile_encoder.blocks.1.mlp.fc2.weight
+tile_encoder.blocks.1.mlp.fc2.bias
+tile_encoder.blocks.1.ls2.gamma
+tile_encoder.blocks.2.norm1.weight
+tile_encoder.blocks.2.norm1.bias
+tile_encoder.blocks.2.attn.qkv.weight
+tile_encoder.blocks.2.attn.qkv.bias
+tile_encoder.blocks.2.attn.proj.weight
+tile_encoder.blocks.2.attn.proj.bias
+tile_encoder.blocks.2.ls1.gamma
+tile_encoder.blocks.2.norm2.weight
+tile_encoder.blocks.2.norm2.bias
+tile_encoder.blocks.2.mlp.fc1.weight
+tile_encoder.blocks.2.mlp.fc1.bias
+tile_encoder.blocks.2.mlp.fc2.weight
+tile_encoder.blocks.2.mlp.fc2.bias
+tile_encoder.blocks.2.ls2.gamma
+tile_encoder.blocks.3.norm1.weight
+tile_encoder.blocks.3.norm1.bias
+tile_encoder.blocks.3.attn.qkv.weight
+tile_encoder.blocks.3.attn.qkv.bias
+tile_encoder.blocks.3.attn.proj.weight
+tile_encoder.blocks.3.attn.proj.bias
+tile_encoder.blocks.3.ls1.gamma
+tile_encoder.blocks.3.norm2.weight
+tile_encoder.blocks.3.norm2.bias
+tile_encoder.blocks.3.mlp.fc1.weight
+tile_encoder.blocks.3.mlp.fc1.bias
+tile_encoder.blocks.3.mlp.fc2.weight
+tile_encoder.blocks.3.mlp.fc2.bias
+tile_encoder.blocks.3.ls2.gamma
+tile_encoder.blocks.4.norm1.weight
+tile_encoder.blocks.4.norm1.bias
+tile_encoder.blocks.4.attn.qkv.weight
+tile_encoder.blocks.4.attn.qkv.bias
+tile_encoder.blocks.4.attn.proj.weight
+tile_encoder.blocks.4.attn.proj.bias
+tile_encoder.blocks.4.ls1.gamma
+tile_encoder.blocks.4.norm2.weight
+tile_encoder.blocks.4.norm2.bias
+tile_encoder.blocks.4.mlp.fc1.weight
+tile_encoder.blocks.4.mlp.fc1.bias
+tile_encoder.blocks.4.mlp.fc2.weight
+tile_encoder.blocks.4.mlp.fc2.bias
+tile_encoder.blocks.4.ls2.gamma
+tile_encoder.blocks.5.norm1.weight
+tile_encoder.blocks.5.norm1.bias
+tile_encoder.blocks.5.attn.qkv.weight
+tile_encoder.blocks.5.attn.qkv.bias
+tile_encoder.blocks.5.attn.proj.weight
+tile_encoder.blocks.5.attn.proj.bias
+tile_encoder.blocks.5.ls1.gamma
+tile_encoder.blocks.5.norm2.weight
+tile_encoder.blocks.5.norm2.bias
+tile_encoder.blocks.5.mlp.fc1.weight
+tile_encoder.blocks.5.mlp.fc1.bias
+tile_encoder.blocks.5.mlp.fc2.weight
+tile_encoder.blocks.5.mlp.fc2.bias
+tile_encoder.blocks.5.ls2.gamma
+tile_encoder.blocks.6.norm1.weight
+tile_encoder.blocks.6.norm1.bias
+tile_encoder.blocks.6.attn.qkv.weight
+tile_encoder.blocks.6.attn.qkv.bias
+tile_encoder.blocks.6.attn.proj.weight
+tile_encoder.blocks.6.attn.proj.bias
+tile_encoder.blocks.6.ls1.gamma
+tile_encoder.blocks.6.norm2.weight
+tile_encoder.blocks.6.norm2.bias
+tile_encoder.blocks.6.mlp.fc1.weight
+tile_encoder.blocks.6.mlp.fc1.bias
+tile_encoder.blocks.6.mlp.fc2.weight
+tile_encoder.blocks.6.mlp.fc2.bias
+tile_encoder.blocks.6.ls2.gamma
+tile_encoder.blocks.7.norm1.weight
+tile_encoder.blocks.7.norm1.bias
+tile_encoder.blocks.7.attn.qkv.weight
+tile_encoder.blocks.7.attn.qkv.bias
+tile_encoder.blocks.7.attn.proj.weight
+tile_encoder.blocks.7.attn.proj.bias
+tile_encoder.blocks.7.ls1.gamma
+tile_encoder.blocks.7.norm2.weight
+tile_encoder.blocks.7.norm2.bias
+tile_encoder.blocks.7.mlp.fc1.weight
+tile_encoder.blocks.7.mlp.fc1.bias
+tile_encoder.blocks.7.mlp.fc2.weight
+tile_encoder.blocks.7.mlp.fc2.bias
+tile_encoder.blocks.7.ls2.gamma
+tile_encoder.blocks.8.norm1.weight
+tile_encoder.blocks.8.norm1.bias
+tile_encoder.blocks.8.attn.qkv.weight
+tile_encoder.blocks.8.attn.qkv.bias
+tile_encoder.blocks.8.attn.proj.weight
+tile_encoder.blocks.8.attn.proj.bias
+tile_encoder.blocks.8.ls1.gamma
+tile_encoder.blocks.8.norm2.weight
+tile_encoder.blocks.8.norm2.bias
+tile_encoder.blocks.8.mlp.fc1.weight
+tile_encoder.blocks.8.mlp.fc1.bias
+tile_encoder.blocks.8.mlp.fc2.weight
+tile_encoder.blocks.8.mlp.fc2.bias
+tile_encoder.blocks.8.ls2.gamma
+tile_encoder.blocks.9.norm1.weight
+tile_encoder.blocks.9.norm1.bias
+tile_encoder.blocks.9.attn.qkv.weight
+tile_encoder.blocks.9.attn.qkv.bias
+tile_encoder.blocks.9.attn.proj.weight
+tile_encoder.blocks.9.attn.proj.bias
+tile_encoder.blocks.9.ls1.gamma
+tile_encoder.blocks.9.norm2.weight
+tile_encoder.blocks.9.norm2.bias
+tile_encoder.blocks.9.mlp.fc1.weight
+tile_encoder.blocks.9.mlp.fc1.bias
+tile_encoder.blocks.9.mlp.fc2.weight
+tile_encoder.blocks.9.mlp.fc2.bias
+tile_encoder.blocks.9.ls2.gamma
+tile_encoder.blocks.10.norm1.weight
+tile_encoder.blocks.10.norm1.bias
+tile_encoder.blocks.10.attn.qkv.weight
+tile_encoder.blocks.10.attn.qkv.bias
+tile_encoder.blocks.10.attn.proj.weight
+tile_encoder.blocks.10.attn.proj.bias
+tile_encoder.blocks.10.ls1.gamma
+tile_encoder.blocks.10.norm2.weight
+tile_encoder.blocks.10.norm2.bias
+tile_encoder.blocks.10.mlp.fc1.weight
+tile_encoder.blocks.10.mlp.fc1.bias
+tile_encoder.blocks.10.mlp.fc2.weight
+tile_encoder.blocks.10.mlp.fc2.bias
+tile_encoder.blocks.10.ls2.gamma
+tile_encoder.blocks.11.norm1.weight
+tile_encoder.blocks.11.norm1.bias
+tile_encoder.blocks.11.attn.qkv.weight
+tile_encoder.blocks.11.attn.qkv.bias
+tile_encoder.blocks.11.attn.proj.weight
+tile_encoder.blocks.11.attn.proj.bias
+tile_encoder.blocks.11.ls1.gamma
+tile_encoder.blocks.11.norm2.weight
+tile_encoder.blocks.11.norm2.bias
+tile_encoder.blocks.11.mlp.fc1.weight
+tile_encoder.blocks.11.mlp.fc1.bias
+tile_encoder.blocks.11.mlp.fc2.weight
+tile_encoder.blocks.11.mlp.fc2.bias
+tile_encoder.blocks.11.ls2.gamma
+tile_encoder.blocks.12.norm1.weight
+tile_encoder.blocks.12.norm1.bias
+tile_encoder.blocks.12.attn.qkv.weight
+tile_encoder.blocks.12.attn.qkv.bias
+tile_encoder.blocks.12.attn.proj.weight
+tile_encoder.blocks.12.attn.proj.bias
+tile_encoder.blocks.12.ls1.gamma
+tile_encoder.blocks.12.norm2.weight
+tile_encoder.blocks.12.norm2.bias
+tile_encoder.blocks.12.mlp.fc1.weight
+tile_encoder.blocks.12.mlp.fc1.bias
+tile_encoder.blocks.12.mlp.fc2.weight
+tile_encoder.blocks.12.mlp.fc2.bias
+tile_encoder.blocks.12.ls2.gamma
+tile_encoder.blocks.13.norm1.weight
+tile_encoder.blocks.13.norm1.bias
+tile_encoder.blocks.13.attn.qkv.weight
+tile_encoder.blocks.13.attn.qkv.bias
+tile_encoder.blocks.13.attn.proj.weight
+tile_encoder.blocks.13.attn.proj.bias
+tile_encoder.blocks.13.ls1.gamma
+tile_encoder.blocks.13.norm2.weight
+tile_encoder.blocks.13.norm2.bias
+tile_encoder.blocks.13.mlp.fc1.weight
+tile_encoder.blocks.13.mlp.fc1.bias
+tile_encoder.blocks.13.mlp.fc2.weight
+tile_encoder.blocks.13.mlp.fc2.bias
+tile_encoder.blocks.13.ls2.gamma
+tile_encoder.blocks.14.norm1.weight
+tile_encoder.blocks.14.norm1.bias
+tile_encoder.blocks.14.attn.qkv.weight
+tile_encoder.blocks.14.attn.qkv.bias
+tile_encoder.blocks.14.attn.proj.weight
+tile_encoder.blocks.14.attn.proj.bias
+tile_encoder.blocks.14.ls1.gamma
+tile_encoder.blocks.14.norm2.weight
+tile_encoder.blocks.14.norm2.bias
+tile_encoder.blocks.14.mlp.fc1.weight
+tile_encoder.blocks.14.mlp.fc1.bias
+tile_encoder.blocks.14.mlp.fc2.weight
+tile_encoder.blocks.14.mlp.fc2.bias
+tile_encoder.blocks.14.ls2.gamma
+tile_encoder.blocks.15.norm1.weight
+tile_encoder.blocks.15.norm1.bias
+tile_encoder.blocks.15.attn.qkv.weight
+tile_encoder.blocks.15.attn.qkv.bias
+tile_encoder.blocks.15.attn.proj.weight
+tile_encoder.blocks.15.attn.proj.bias
+tile_encoder.blocks.15.ls1.gamma
+tile_encoder.blocks.15.norm2.weight
+tile_encoder.blocks.15.norm2.bias
+tile_encoder.blocks.15.mlp.fc1.weight
+tile_encoder.blocks.15.mlp.fc1.bias
+tile_encoder.blocks.15.mlp.fc2.weight
+tile_encoder.blocks.15.mlp.fc2.bias
+tile_encoder.blocks.15.ls2.gamma
+tile_encoder.blocks.16.norm1.weight
+tile_encoder.blocks.16.norm1.bias
+tile_encoder.blocks.16.attn.qkv.weight
+tile_encoder.blocks.16.attn.qkv.bias
+tile_encoder.blocks.16.attn.proj.weight
+tile_encoder.blocks.16.attn.proj.bias
+tile_encoder.blocks.16.ls1.gamma
+tile_encoder.blocks.16.norm2.weight
+tile_encoder.blocks.16.norm2.bias
+tile_encoder.blocks.16.mlp.fc1.weight
+tile_encoder.blocks.16.mlp.fc1.bias
+tile_encoder.blocks.16.mlp.fc2.weight
+tile_encoder.blocks.16.mlp.fc2.bias
+tile_encoder.blocks.16.ls2.gamma
+tile_encoder.blocks.17.norm1.weight
+tile_encoder.blocks.17.norm1.bias
+tile_encoder.blocks.17.attn.qkv.weight
+tile_encoder.blocks.17.attn.qkv.bias
+tile_encoder.blocks.17.attn.proj.weight
+tile_encoder.blocks.17.attn.proj.bias
+tile_encoder.blocks.17.ls1.gamma
+tile_encoder.blocks.17.norm2.weight
+tile_encoder.blocks.17.norm2.bias
+tile_encoder.blocks.17.mlp.fc1.weight
+tile_encoder.blocks.17.mlp.fc1.bias
+tile_encoder.blocks.17.mlp.fc2.weight
+tile_encoder.blocks.17.mlp.fc2.bias
+tile_encoder.blocks.17.ls2.gamma
+tile_encoder.blocks.18.norm1.weight
+tile_encoder.blocks.18.norm1.bias
+tile_encoder.blocks.18.attn.qkv.weight
+tile_encoder.blocks.18.attn.qkv.bias
+tile_encoder.blocks.18.attn.proj.weight
+tile_encoder.blocks.18.attn.proj.bias
+tile_encoder.blocks.18.ls1.gamma
+tile_encoder.blocks.18.norm2.weight
+tile_encoder.blocks.18.norm2.bias
+tile_encoder.blocks.18.mlp.fc1.weight
+tile_encoder.blocks.18.mlp.fc1.bias
+tile_encoder.blocks.18.mlp.fc2.weight
+tile_encoder.blocks.18.mlp.fc2.bias
+tile_encoder.blocks.18.ls2.gamma
+tile_encoder.blocks.19.norm1.weight
+tile_encoder.blocks.19.norm1.bias
+tile_encoder.blocks.19.attn.qkv.weight
+tile_encoder.blocks.19.attn.qkv.bias
+tile_encoder.blocks.19.attn.proj.weight
+tile_encoder.blocks.19.attn.proj.bias
+tile_encoder.blocks.19.ls1.gamma
+tile_encoder.blocks.19.norm2.weight
+tile_encoder.blocks.19.norm2.bias
+tile_encoder.blocks.19.mlp.fc1.weight
+tile_encoder.blocks.19.mlp.fc1.bias
+tile_encoder.blocks.19.mlp.fc2.weight
+tile_encoder.blocks.19.mlp.fc2.bias
+tile_encoder.blocks.19.ls2.gamma
+tile_encoder.blocks.20.norm1.weight
+tile_encoder.blocks.20.norm1.bias
+tile_encoder.blocks.20.attn.qkv.weight
+tile_encoder.blocks.20.attn.qkv.bias
+tile_encoder.blocks.20.attn.proj.weight
+tile_encoder.blocks.20.attn.proj.bias
+tile_encoder.blocks.20.ls1.gamma
+tile_encoder.blocks.20.norm2.weight
+tile_encoder.blocks.20.norm2.bias
+tile_encoder.blocks.20.mlp.fc1.weight
+tile_encoder.blocks.20.mlp.fc1.bias
+tile_encoder.blocks.20.mlp.fc2.weight
+tile_encoder.blocks.20.mlp.fc2.bias
+tile_encoder.blocks.20.ls2.gamma
+tile_encoder.blocks.21.norm1.weight
+tile_encoder.blocks.21.norm1.bias
+tile_encoder.blocks.21.attn.qkv.weight
+tile_encoder.blocks.21.attn.qkv.bias
+tile_encoder.blocks.21.attn.proj.weight
+tile_encoder.blocks.21.attn.proj.bias
+tile_encoder.blocks.21.ls1.gamma
+tile_encoder.blocks.21.norm2.weight
+tile_encoder.blocks.21.norm2.bias
+tile_encoder.blocks.21.mlp.fc1.weight
+tile_encoder.blocks.21.mlp.fc1.bias
+tile_encoder.blocks.21.mlp.fc2.weight
+tile_encoder.blocks.21.mlp.fc2.bias
+tile_encoder.blocks.21.ls2.gamma
+tile_encoder.blocks.22.norm1.weight
+tile_encoder.blocks.22.norm1.bias
+tile_encoder.blocks.22.attn.qkv.weight
+tile_encoder.blocks.22.attn.qkv.bias
+tile_encoder.blocks.22.attn.proj.weight
+tile_encoder.blocks.22.attn.proj.bias
+tile_encoder.blocks.22.ls1.gamma
+tile_encoder.blocks.22.norm2.weight
+tile_encoder.blocks.22.norm2.bias
+tile_encoder.blocks.22.mlp.fc1.weight
+tile_encoder.blocks.22.mlp.fc1.bias
+tile_encoder.blocks.22.mlp.fc2.weight
+tile_encoder.blocks.22.mlp.fc2.bias
+tile_encoder.blocks.22.ls2.gamma
+tile_encoder.blocks.23.norm1.weight
+tile_encoder.blocks.23.norm1.bias
+tile_encoder.blocks.23.attn.qkv.weight
+tile_encoder.blocks.23.attn.qkv.bias
+tile_encoder.blocks.23.attn.proj.weight
+tile_encoder.blocks.23.attn.proj.bias
+tile_encoder.blocks.23.ls1.gamma
+tile_encoder.blocks.23.norm2.weight
+tile_encoder.blocks.23.norm2.bias
+tile_encoder.blocks.23.mlp.fc1.weight
+tile_encoder.blocks.23.mlp.fc1.bias
+tile_encoder.blocks.23.mlp.fc2.weight
+tile_encoder.blocks.23.mlp.fc2.bias
+tile_encoder.blocks.23.ls2.gamma
+tile_encoder.norm.weight
+tile_encoder.norm.bias
+classifier.0.weight
+classifier.0.bias
+classifier.2.weight
+classifier.2.bias
+[INFO] Start training...
+Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 2.044053|Valid Accuracy average: 0.011266
+Eval iou: 0.002|Eval prec: 0.002|Eval recall: 0.143|Eval acc: 0.011|[WARN] Save best performance model at epoch 0 - step 0!
+Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 1.073162|Valid Accuracy average: 0.602033
+Eval iou: 0.309|Eval prec: 0.584|Eval recall: 0.411|Eval acc: 0.602|[WARN] Save best performance model at epoch 0 - step 1000!
+Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 1.016864|Valid Accuracy average: 0.596619
+Eval iou: 0.348|Eval prec: 0.611|Eval recall: 0.461|Eval acc: 0.597|[WARN] Save best performance model at epoch 0 - step 2000!
+Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 1.093101|Valid Accuracy average: 0.569334
+Eval iou: 0.337|Eval prec: 0.657|Eval recall: 0.451|Eval acc: 0.569|[WARN] Save best performance model at epoch 0 - step 3000!
+Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.922617|Valid Accuracy average: 0.634901
+Eval iou: 0.38|Eval prec: 0.655|Eval recall: 0.487|Eval acc: 0.635|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.970484|Valid Accuracy average: 0.638219
+Eval iou: 0.398|Eval prec: 0.582|Eval recall: 0.522|Eval acc: 0.638|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.949782|Valid Accuracy average: 0.638488
+Eval iou: 0.387|Eval prec: 0.576|Eval recall: 0.512|Eval acc: 0.638|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.978988|Valid Accuracy average: 0.620440
+Eval iou: 0.39|Eval prec: 0.593|Eval recall: 0.521|Eval acc: 0.62|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.967894|Valid Accuracy average: 0.616124
+Eval iou: 0.398|Eval prec: 0.606|Eval recall: 0.533|Eval acc: 0.616|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.962358|Valid Accuracy average: 0.624409
+Eval iou: 0.412|Eval prec: 0.582|Eval recall: 0.554|Eval acc: 0.624|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 1.020021|Valid Accuracy average: 0.591081
+Eval iou: 0.389|Eval prec: 0.583|Eval recall: 0.543|Eval acc: 0.591|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.980021|Valid Accuracy average: 0.625989
+Eval iou: 0.429|Eval prec: 0.622|Eval recall: 0.564|Eval acc: 0.626|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.869093|Valid Accuracy average: 0.661133
+Eval iou: 0.417|Eval prec: 0.652|Eval recall: 0.527|Eval acc: 0.661|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.855510|Valid Accuracy average: 0.670796
+Eval iou: 0.456|Eval prec: 0.612|Eval recall: 0.589|Eval acc: 0.671|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.835219|Valid Accuracy average: 0.679629
+Eval iou: 0.461|Eval prec: 0.638|Eval recall: 0.597|Eval acc: 0.68|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.765983|Valid Accuracy average: 0.707923
+Eval iou: 0.48|Eval prec: 0.617|Eval recall: 0.636|Eval acc: 0.708|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.800043|Valid Accuracy average: 0.695570
+Eval iou: 0.472|Eval prec: 0.637|Eval recall: 0.603|Eval acc: 0.696|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.792645|Valid Accuracy average: 0.704190
+Eval iou: 0.485|Eval prec: 0.625|Eval recall: 0.64|Eval acc: 0.704|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.818646|Valid Accuracy average: 0.680089
+Eval iou: 0.467|Eval prec: 0.609|Eval recall: 0.638|Eval acc: 0.68|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.992886|Valid Accuracy average: 0.627234
+Eval iou: 0.415|Eval prec: 0.571|Eval recall: 0.628|Eval acc: 0.627|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.769254|Valid Accuracy average: 0.704011
+Eval iou: 0.483|Eval prec: 0.633|Eval recall: 0.636|Eval acc: 0.704|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.749911|Valid Accuracy average: 0.713909
+Eval iou: 0.492|Eval prec: 0.626|Eval recall: 0.647|Eval acc: 0.714|Evaluating...
+[EVAL] Epoch 0|Valid Loss average: 0.866345|Valid Accuracy average: 0.659642
+Eval iou: 0.447|Eval prec: 0.67|Eval recall: 0.569|Eval acc: 0.66|[WARN] Save best performance model at epoch 0 - step 22000!
+[Train] Epoch 0|Train Loss average: 0.978137|Train Accuracy average: 0.618034
+Train acc: 443877.618|Train loss: 702505.52|Train iou: 0.402|Train prec: 0.594|Train recall: 0.531|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.774006|Valid Accuracy average: 0.704336
+Eval iou: 0.482|Eval prec: 0.615|Eval recall: 0.664|Eval acc: 0.704|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.771461|Valid Accuracy average: 0.698305
+Eval iou: 0.492|Eval prec: 0.629|Eval recall: 0.655|Eval acc: 0.698|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.922151|Valid Accuracy average: 0.645954
+Eval iou: 0.458|Eval prec: 0.618|Eval recall: 0.636|Eval acc: 0.646|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.783420|Valid Accuracy average: 0.693350
+Eval iou: 0.478|Eval prec: 0.64|Eval recall: 0.65|Eval acc: 0.693|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.797313|Valid Accuracy average: 0.690256
+Eval iou: 0.496|Eval prec: 0.653|Eval recall: 0.657|Eval acc: 0.69|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.866810|Valid Accuracy average: 0.656929
+Eval iou: 0.454|Eval prec: 0.591|Eval recall: 0.675|Eval acc: 0.657|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.784217|Valid Accuracy average: 0.693552
+Eval iou: 0.471|Eval prec: 0.609|Eval recall: 0.665|Eval acc: 0.694|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.720990|Valid Accuracy average: 0.725590
+Eval iou: 0.5|Eval prec: 0.636|Eval recall: 0.682|Eval acc: 0.726|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.768700|Valid Accuracy average: 0.698552
+Eval iou: 0.493|Eval prec: 0.632|Eval recall: 0.661|Eval acc: 0.699|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.721926|Valid Accuracy average: 0.722788
+Eval iou: 0.509|Eval prec: 0.656|Eval recall: 0.664|Eval acc: 0.723|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.778663|Valid Accuracy average: 0.700782
+Eval iou: 0.499|Eval prec: 0.634|Eval recall: 0.682|Eval acc: 0.701|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.718614|Valid Accuracy average: 0.722597
+Eval iou: 0.518|Eval prec: 0.638|Eval recall: 0.699|Eval acc: 0.723|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.796300|Valid Accuracy average: 0.693485
+Eval iou: 0.484|Eval prec: 0.649|Eval recall: 0.635|Eval acc: 0.693|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.758258|Valid Accuracy average: 0.715580
+Eval iou: 0.496|Eval prec: 0.612|Eval recall: 0.704|Eval acc: 0.716|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.737116|Valid Accuracy average: 0.717317
+Eval iou: 0.51|Eval prec: 0.632|Eval recall: 0.689|Eval acc: 0.717|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.743734|Valid Accuracy average: 0.714066
+Eval iou: 0.507|Eval prec: 0.645|Eval recall: 0.698|Eval acc: 0.714|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.770786|Valid Accuracy average: 0.696646
+Eval iou: 0.489|Eval prec: 0.629|Eval recall: 0.667|Eval acc: 0.697|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.690281|Valid Accuracy average: 0.731016
+Eval iou: 0.523|Eval prec: 0.664|Eval recall: 0.672|Eval acc: 0.731|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.717440|Valid Accuracy average: 0.722115
+Eval iou: 0.508|Eval prec: 0.639|Eval recall: 0.681|Eval acc: 0.722|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.735327|Valid Accuracy average: 0.719626
+Eval iou: 0.517|Eval prec: 0.648|Eval recall: 0.677|Eval acc: 0.72|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.709469|Valid Accuracy average: 0.735130
+Eval iou: 0.515|Eval prec: 0.651|Eval recall: 0.677|Eval acc: 0.735|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.709322|Valid Accuracy average: 0.722238
+Eval iou: 0.513|Eval prec: 0.651|Eval recall: 0.677|Eval acc: 0.722|Evaluating...
+[EVAL] Epoch 1|Valid Loss average: 0.732297|Valid Accuracy average: 0.722126
+Eval iou: 0.516|Eval prec: 0.664|Eval recall: 0.688|Eval acc: 0.722|[Train] Epoch 1|Train Loss average: 0.817906|Train Accuracy average: 0.687962
+Train acc: 494100.688|Train loss: 587426.709|Train iou: 0.493|Train prec: 0.656|Train recall: 0.638|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.708760|Valid Accuracy average: 0.721599
+Eval iou: 0.511|Eval prec: 0.67|Eval recall: 0.669|Eval acc: 0.722|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.731312|Valid Accuracy average: 0.719783
+Eval iou: 0.505|Eval prec: 0.672|Eval recall: 0.654|Eval acc: 0.72|[WARN] Save best performance model at epoch 2 - step 45000!
+Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.738518|Valid Accuracy average: 0.719032
+Eval iou: 0.519|Eval prec: 0.683|Eval recall: 0.653|Eval acc: 0.719|[WARN] Save best performance model at epoch 2 - step 46000!
+Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.843131|Valid Accuracy average: 0.664496
+Eval iou: 0.459|Eval prec: 0.623|Eval recall: 0.653|Eval acc: 0.664|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.674298|Valid Accuracy average: 0.733493
+Eval iou: 0.533|Eval prec: 0.673|Eval recall: 0.684|Eval acc: 0.733|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.667765|Valid Accuracy average: 0.742450
+Eval iou: 0.54|Eval prec: 0.678|Eval recall: 0.695|Eval acc: 0.742|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.714026|Valid Accuracy average: 0.721039
+Eval iou: 0.52|Eval prec: 0.677|Eval recall: 0.682|Eval acc: 0.721|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.651995|Valid Accuracy average: 0.750925
+Eval iou: 0.54|Eval prec: 0.657|Eval recall: 0.722|Eval acc: 0.751|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.668051|Valid Accuracy average: 0.745028
+Eval iou: 0.528|Eval prec: 0.696|Eval recall: 0.672|Eval acc: 0.745|[WARN] Save best performance model at epoch 2 - step 52000!
+Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.729155|Valid Accuracy average: 0.715154
+Eval iou: 0.51|Eval prec: 0.678|Eval recall: 0.675|Eval acc: 0.715|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.662431|Valid Accuracy average: 0.741934
+Eval iou: 0.533|Eval prec: 0.666|Eval recall: 0.688|Eval acc: 0.742|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.676926|Valid Accuracy average: 0.738325
+Eval iou: 0.539|Eval prec: 0.688|Eval recall: 0.69|Eval acc: 0.738|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.668678|Valid Accuracy average: 0.748010
+Eval iou: 0.539|Eval prec: 0.648|Eval recall: 0.724|Eval acc: 0.748|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.679595|Valid Accuracy average: 0.737731
+Eval iou: 0.512|Eval prec: 0.64|Eval recall: 0.725|Eval acc: 0.738|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.650812|Valid Accuracy average: 0.752012
+Eval iou: 0.54|Eval prec: 0.669|Eval recall: 0.705|Eval acc: 0.752|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.773839|Valid Accuracy average: 0.700166
+Eval iou: 0.509|Eval prec: 0.663|Eval recall: 0.674|Eval acc: 0.7|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.716639|Valid Accuracy average: 0.720916
+Eval iou: 0.528|Eval prec: 0.67|Eval recall: 0.696|Eval acc: 0.721|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.684522|Valid Accuracy average: 0.738683
+Eval iou: 0.526|Eval prec: 0.628|Eval recall: 0.727|Eval acc: 0.739|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.663074|Valid Accuracy average: 0.742091
+Eval iou: 0.536|Eval prec: 0.662|Eval recall: 0.713|Eval acc: 0.742|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.680045|Valid Accuracy average: 0.733561
+Eval iou: 0.55|Eval prec: 0.696|Eval recall: 0.699|Eval acc: 0.734|[WARN] Save best performance model at epoch 2 - step 63000!
+Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.699579|Valid Accuracy average: 0.724873
+Eval iou: 0.534|Eval prec: 0.679|Eval recall: 0.703|Eval acc: 0.725|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.711482|Valid Accuracy average: 0.724133
+Eval iou: 0.521|Eval prec: 0.657|Eval recall: 0.71|Eval acc: 0.724|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.641730|Valid Accuracy average: 0.749737
+Eval iou: 0.537|Eval prec: 0.666|Eval recall: 0.702|Eval acc: 0.75|Evaluating...
+[EVAL] Epoch 2|Valid Loss average: 0.694631|Valid Accuracy average: 0.727350
+Eval iou: 0.535|Eval prec: 0.662|Eval recall: 0.72|Eval acc: 0.727|[Train] Epoch 2|Train Loss average: 0.755920|Train Accuracy average: 0.711652
+Train acc: 511114.712|Train loss: 542907.518|Train iou: 0.524|Train prec: 0.677|Train recall: 0.673|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.639645|Valid Accuracy average: 0.757438
+Eval iou: 0.55|Eval prec: 0.655|Eval recall: 0.742|Eval acc: 0.757|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.653385|Valid Accuracy average: 0.742921
+Eval iou: 0.54|Eval prec: 0.663|Eval recall: 0.709|Eval acc: 0.743|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.684880|Valid Accuracy average: 0.734278
+Eval iou: 0.535|Eval prec: 0.664|Eval recall: 0.703|Eval acc: 0.734|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.627148|Valid Accuracy average: 0.758178
+Eval iou: 0.553|Eval prec: 0.698|Eval recall: 0.69|Eval acc: 0.758|[WARN] Save best performance model at epoch 3 - step 70000!
+Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.638776|Valid Accuracy average: 0.755241
+Eval iou: 0.543|Eval prec: 0.676|Eval recall: 0.7|Eval acc: 0.755|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.725408|Valid Accuracy average: 0.713483
+Eval iou: 0.502|Eval prec: 0.639|Eval recall: 0.701|Eval acc: 0.713|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.643654|Valid Accuracy average: 0.751754
+Eval iou: 0.55|Eval prec: 0.671|Eval recall: 0.722|Eval acc: 0.752|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.648081|Valid Accuracy average: 0.747259
+Eval iou: 0.535|Eval prec: 0.661|Eval recall: 0.706|Eval acc: 0.747|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.666262|Valid Accuracy average: 0.745522
+Eval iou: 0.542|Eval prec: 0.67|Eval recall: 0.722|Eval acc: 0.746|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.633025|Valid Accuracy average: 0.751766
+Eval iou: 0.544|Eval prec: 0.667|Eval recall: 0.722|Eval acc: 0.752|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.628773|Valid Accuracy average: 0.757516
+Eval iou: 0.558|Eval prec: 0.695|Eval recall: 0.716|Eval acc: 0.758|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.603732|Valid Accuracy average: 0.769410
+Eval iou: 0.567|Eval prec: 0.702|Eval recall: 0.71|Eval acc: 0.769|[WARN] Save best performance model at epoch 3 - step 78000!
+Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.683916|Valid Accuracy average: 0.743257
+Eval iou: 0.533|Eval prec: 0.668|Eval recall: 0.7|Eval acc: 0.743|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.676784|Valid Accuracy average: 0.740387
+Eval iou: 0.549|Eval prec: 0.687|Eval recall: 0.705|Eval acc: 0.74|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.657884|Valid Accuracy average: 0.748750
+Eval iou: 0.549|Eval prec: 0.67|Eval recall: 0.717|Eval acc: 0.749|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.621797|Valid Accuracy average: 0.761754
+Eval iou: 0.555|Eval prec: 0.664|Eval recall: 0.748|Eval acc: 0.762|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.618679|Valid Accuracy average: 0.759332
+Eval iou: 0.553|Eval prec: 0.681|Eval recall: 0.727|Eval acc: 0.759|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.585195|Valid Accuracy average: 0.778412
+Eval iou: 0.579|Eval prec: 0.704|Eval recall: 0.737|Eval acc: 0.778|[WARN] Save best performance model at epoch 3 - step 84000!
+Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.590815|Valid Accuracy average: 0.770486
+Eval iou: 0.564|Eval prec: 0.713|Eval recall: 0.693|Eval acc: 0.77|[WARN] Save best performance model at epoch 3 - step 85000!
+Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.617516|Valid Accuracy average: 0.757001
+Eval iou: 0.556|Eval prec: 0.687|Eval recall: 0.716|Eval acc: 0.757|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.620876|Valid Accuracy average: 0.763435
+Eval iou: 0.568|Eval prec: 0.69|Eval recall: 0.733|Eval acc: 0.763|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.681012|Valid Accuracy average: 0.733549
+Eval iou: 0.541|Eval prec: 0.695|Eval recall: 0.7|Eval acc: 0.734|Evaluating...
+[EVAL] Epoch 3|Valid Loss average: 0.610964|Valid Accuracy average: 0.761182
+Eval iou: 0.561|Eval prec: 0.721|Eval recall: 0.689|Eval acc: 0.761|[WARN] Save best performance model at epoch 3 - step 89000!
+[Train] Epoch 3|Train Loss average: 0.717389|Train Accuracy average: 0.727853
+Train acc: 522750.728|Train loss: 515234.378|Train iou: 0.543|Train prec: 0.692|Train recall: 0.693|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.576506|Valid Accuracy average: 0.777291
+Eval iou: 0.571|Eval prec: 0.695|Eval recall: 0.739|Eval acc: 0.777|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.639489|Valid Accuracy average: 0.754165
+Eval iou: 0.55|Eval prec: 0.693|Eval recall: 0.707|Eval acc: 0.754|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.598625|Valid Accuracy average: 0.768390
+Eval iou: 0.561|Eval prec: 0.669|Eval recall: 0.748|Eval acc: 0.768|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.598653|Valid Accuracy average: 0.769332
+Eval iou: 0.574|Eval prec: 0.713|Eval recall: 0.724|Eval acc: 0.769|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.616645|Valid Accuracy average: 0.766238
+Eval iou: 0.563|Eval prec: 0.693|Eval recall: 0.729|Eval acc: 0.766|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.597466|Valid Accuracy average: 0.770430
+Eval iou: 0.565|Eval prec: 0.689|Eval recall: 0.736|Eval acc: 0.77|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.627732|Valid Accuracy average: 0.758525
+Eval iou: 0.559|Eval prec: 0.683|Eval recall: 0.734|Eval acc: 0.759|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.726111|Valid Accuracy average: 0.718472
+Eval iou: 0.524|Eval prec: 0.692|Eval recall: 0.69|Eval acc: 0.718|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.631788|Valid Accuracy average: 0.759758
+Eval iou: 0.557|Eval prec: 0.663|Eval recall: 0.767|Eval acc: 0.76|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.611688|Valid Accuracy average: 0.762639
+Eval iou: 0.552|Eval prec: 0.673|Eval recall: 0.742|Eval acc: 0.763|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.737597|Valid Accuracy average: 0.713842
+Eval iou: 0.522|Eval prec: 0.692|Eval recall: 0.669|Eval acc: 0.714|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.591242|Valid Accuracy average: 0.768973
+Eval iou: 0.567|Eval prec: 0.679|Eval recall: 0.739|Eval acc: 0.769|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.646236|Valid Accuracy average: 0.747046
+Eval iou: 0.553|Eval prec: 0.677|Eval recall: 0.728|Eval acc: 0.747|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.566868|Valid Accuracy average: 0.785093
+Eval iou: 0.582|Eval prec: 0.73|Eval recall: 0.706|Eval acc: 0.785|[WARN] Save best performance model at epoch 4 - step 102000!
+Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.585181|Valid Accuracy average: 0.776708
+Eval iou: 0.578|Eval prec: 0.725|Eval recall: 0.719|Eval acc: 0.777|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.595414|Valid Accuracy average: 0.771697
+Eval iou: 0.565|Eval prec: 0.686|Eval recall: 0.745|Eval acc: 0.772|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.584392|Valid Accuracy average: 0.777123
+Eval iou: 0.583|Eval prec: 0.712|Eval recall: 0.731|Eval acc: 0.777|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.596484|Valid Accuracy average: 0.773065
+Eval iou: 0.562|Eval prec: 0.669|Eval recall: 0.764|Eval acc: 0.773|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.653721|Valid Accuracy average: 0.746430
+Eval iou: 0.557|Eval prec: 0.687|Eval recall: 0.718|Eval acc: 0.746|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.606538|Valid Accuracy average: 0.766809
+Eval iou: 0.569|Eval prec: 0.69|Eval recall: 0.736|Eval acc: 0.767|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.651183|Valid Accuracy average: 0.754008
+Eval iou: 0.545|Eval prec: 0.689|Eval recall: 0.704|Eval acc: 0.754|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.580708|Valid Accuracy average: 0.781405
+Eval iou: 0.58|Eval prec: 0.713|Eval recall: 0.727|Eval acc: 0.781|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.598440|Valid Accuracy average: 0.770475
+Eval iou: 0.56|Eval prec: 0.708|Eval recall: 0.72|Eval acc: 0.77|Evaluating...
+[EVAL] Epoch 4|Valid Loss average: 0.562572|Valid Accuracy average: 0.784432
+Eval iou: 0.566|Eval prec: 0.666|Eval recall: 0.769|Eval acc: 0.784|[Train] Epoch 4|Train Loss average: 0.683868|Train Accuracy average: 0.741638
+Train acc: 532650.742|Train loss: 491159.555|Train iou: 0.559|Train prec: 0.702|Train recall: 0.708|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.591315|Valid Accuracy average: 0.774836
+Eval iou: 0.56|Eval prec: 0.694|Eval recall: 0.73|Eval acc: 0.775|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.608585|Valid Accuracy average: 0.770352
+Eval iou: 0.558|Eval prec: 0.694|Eval recall: 0.727|Eval acc: 0.77|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.626217|Valid Accuracy average: 0.761765
+Eval iou: 0.564|Eval prec: 0.701|Eval recall: 0.733|Eval acc: 0.762|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.576037|Valid Accuracy average: 0.777762
+Eval iou: 0.578|Eval prec: 0.713|Eval recall: 0.722|Eval acc: 0.778|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.556120|Valid Accuracy average: 0.785519
+Eval iou: 0.592|Eval prec: 0.715|Eval recall: 0.748|Eval acc: 0.786|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.618161|Valid Accuracy average: 0.764702
+Eval iou: 0.57|Eval prec: 0.695|Eval recall: 0.729|Eval acc: 0.765|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.563534|Valid Accuracy average: 0.784118
+Eval iou: 0.566|Eval prec: 0.747|Eval recall: 0.7|Eval acc: 0.784|[WARN] Save best performance model at epoch 5 - step 118000!
+Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.589758|Valid Accuracy average: 0.775138
+Eval iou: 0.571|Eval prec: 0.713|Eval recall: 0.721|Eval acc: 0.775|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.621599|Valid Accuracy average: 0.757315
+Eval iou: 0.561|Eval prec: 0.682|Eval recall: 0.751|Eval acc: 0.757|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.594594|Valid Accuracy average: 0.768760
+Eval iou: 0.568|Eval prec: 0.69|Eval recall: 0.746|Eval acc: 0.769|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.579686|Valid Accuracy average: 0.776607
+Eval iou: 0.581|Eval prec: 0.692|Eval recall: 0.757|Eval acc: 0.777|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.583897|Valid Accuracy average: 0.768995
+Eval iou: 0.556|Eval prec: 0.708|Eval recall: 0.705|Eval acc: 0.769|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.592768|Valid Accuracy average: 0.774040
+Eval iou: 0.585|Eval prec: 0.716|Eval recall: 0.734|Eval acc: 0.774|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.650920|Valid Accuracy average: 0.753223
+Eval iou: 0.558|Eval prec: 0.676|Eval recall: 0.741|Eval acc: 0.753|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.593953|Valid Accuracy average: 0.774242
+Eval iou: 0.572|Eval prec: 0.69|Eval recall: 0.744|Eval acc: 0.774|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.620649|Valid Accuracy average: 0.756440
+Eval iou: 0.554|Eval prec: 0.675|Eval recall: 0.724|Eval acc: 0.756|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.525259|Valid Accuracy average: 0.799688
+Eval iou: 0.601|Eval prec: 0.725|Eval recall: 0.741|Eval acc: 0.8|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.565212|Valid Accuracy average: 0.785239
+Eval iou: 0.59|Eval prec: 0.7|Eval recall: 0.764|Eval acc: 0.785|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.623727|Valid Accuracy average: 0.760162
+Eval iou: 0.562|Eval prec: 0.695|Eval recall: 0.74|Eval acc: 0.76|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.573631|Valid Accuracy average: 0.784432
+Eval iou: 0.587|Eval prec: 0.698|Eval recall: 0.754|Eval acc: 0.784|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.571252|Valid Accuracy average: 0.784275
+Eval iou: 0.573|Eval prec: 0.674|Eval recall: 0.782|Eval acc: 0.784|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.592546|Valid Accuracy average: 0.777750
+Eval iou: 0.584|Eval prec: 0.705|Eval recall: 0.736|Eval acc: 0.778|Evaluating...
+[EVAL] Epoch 5|Valid Loss average: 0.559487|Valid Accuracy average: 0.787929
+Eval iou: 0.584|Eval prec: 0.703|Eval recall: 0.762|Eval acc: 0.788|[Train] Epoch 5|Train Loss average: 0.655253|Train Accuracy average: 0.753131
+Train acc: 540905.753|Train loss: 470607.853|Train iou: 0.573|Train prec: 0.713|Train recall: 0.724|Evaluating...
+[EVAL] Epoch 6|Valid Loss average: 0.568581|Valid Accuracy average: 0.781920
+Eval iou: 0.587|Eval prec: 0.731|Eval recall: 0.726|Eval acc: 0.782|Evaluating...
+[EVAL] Epoch 6|Valid Loss average: 0.506658|Valid Accuracy average: 0.809419
+Eval iou: 0.612|Eval prec: 0.733|Eval recall: 0.755|Eval acc: 0.809|Evaluating...
+[EVAL] Epoch 6|Valid Loss average: 0.588098|Valid Accuracy average: 0.770273
+Eval iou: 0.571|Eval prec: 0.73|Eval recall: 0.712|Eval acc: 0.77|Evaluating...
+[EVAL] Epoch 6|Valid Loss average: 0.526637|Valid Accuracy average: 0.798758
+Eval iou: 0.593|Eval prec: 0.719|Eval recall: 0.737|Eval acc: 0.799|Evaluating...
+[EVAL] Epoch 6|Valid Loss average: 0.588156|Valid Accuracy average: 0.778244
+Eval iou: 0.582|Eval prec: 0.697|Eval recall: 0.751|Eval acc: 0.778|Evaluating...
+[EVAL] Epoch 6|Valid Loss average: 0.539357|Valid Accuracy average: 0.795249
+Eval iou: 0.595|Eval prec: 0.705|Eval recall: 0.779|Eval acc: 0.795|Evaluating...

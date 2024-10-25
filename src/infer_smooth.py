@@ -319,9 +319,9 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
 
 
 if __name__=='__main__':
-    done_cases = [f"Case_{n}" for n in [1, 3, 4, 8, 9, 10]]
-    # cases = [f"Case_{n}" for n in range(6)]
-    cases = ["Case_6"]
+    done_cases = [f"Case_{n}" for n in [1, 3, 4, 9, 10]]
+    # cases = [f"Case_{n}" for n in [6, 8]]
+    cases = ["Case_6", "Case_8"]
     metadatas = {}
     
     outdir = args.outdir

@@ -45,11 +45,11 @@ def print_statistic_class(class_dict):
         print(f"class {cl}: {len(images)}", end = "| ")
 
 if __name__=="__main__":
-    label_dir = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/training_data_256/labels'
-    image_dir = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/training_data_256/images'
-    case_dict_path = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/case_dict_256.json'
+    label_dir = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256_case68/labels'
+    image_dir = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256_case68/images'
+    case_dict_path = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/case_dict_256_case68.json'
     # class_dict_inpath = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/class_dict_256_rm_confused_case.json'
-    class_dict_outpath = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/class_dict_256_retrain_for_phase2_with9.json'
+    class_dict_outpath = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/class_dict_256_case68.json'
     class_dict = {}
     # class_dict = get_case_dict(class_dict_inpath)
     

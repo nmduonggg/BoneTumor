@@ -12,8 +12,8 @@ def write_json(data, json_path):
     return 
 
 if __name__=='__main__':
-    root_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data'
-    out_path = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/metadata.json'
+    root_folder = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/phase2_training_data'
+    out_path = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2/metadata.json'
     
     all_metadatas = []
     cnt = 0

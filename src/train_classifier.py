@@ -77,7 +77,7 @@ if hasattr(model, "enable_lora_training"):
     
 optimizer = utils.create_optimizer(model.parameters(), train_opt)
 
-weight = torch.tensor([0.2, 0.5, 1.0, 1.0, 1.0, 1.0, 0.2]).to(device)
+weight = torch.tensor([0.2, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2]).to(device)
 weight = weight / torch.sum(weight)
 loss_func = nn.CrossEntropyLoss(weight=weight)
 # loss_func = FocalLoss().to(device)
@@ -109,20 +109,17 @@ def train():
             
             print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
             for k, v in eval_metrics.items():
-                eval_metrics[k] = np.mean(v)
+                eval_metrics[k] = np.mean(v / len(valid_loader))
                 print(f"Eval {k}: {round(eval_metrics[k], 3)}", end= '|')
                 
             if opt['wandb']: 
                 wandb.log({f"eval_epoch_{k}": v for k, v in eval_metrics.items()})
             
-            # if eval_acc.avg > best_acc:
-            #     print(f"[WARN] Save best performance model at epoch {epoch}!")
-            #     best_acc = eval_acc.avg
-            #     torch.save(model.state_dict(), os.path.join(working_dir, '_best.pt'))
             if eval_metrics['prec'] > best_prec:
                 print(f"[WARN] Save best performance model at epoch {epoch} - step {global_step}!")
                 # best_acc = eval_acc.avg
                 best_prec = eval_metrics['prec']
+                torch.save(model.state_dict(), os.path.join(working_dir, '_best.pt'))
         
             
         # Training Loop #
@@ -147,15 +144,16 @@ def train():
                 iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
             elif train_opt['mode']=='classification':
                 iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
+                train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_)
+                train_metrics['prec'] = train_metrics.get('prec', 0) + np.array(prec_)
+                train_metrics['recall'] = train_metrics.get('recall', 0) + np.array(recall_)
+                train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_)
+                train_metrics['loss'] = train_metrics.get('loss', 0) + loss.detach().cpu().item()
+
+                # all_train_preds.append(pred.clone().detach().cpu())
+                # all_train_gts.append(gt.clone().detach().cpu())
             acc_tracker.update(acc_, batch_size)
-            all_train_preds.append(pred.clone().detach().cpu())
-            all_train_gts.append(gt.clone().detach().cpu())
             
-            # train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_)*batch_size
-            # train_metrics['prec'] = train_metrics.get('prec', 0) + np.array(prec_)*batch_size
-            # train_metrics['recall'] = train_metrics.get('recall', 0) + np.array(recall_)*batch_size
-            train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_)*batch_size
-            train_metrics['loss'] = train_metrics.get('loss', 0) + loss.detach().cpu().item()*batch_size
             
             global_step += 1
             
@@ -166,7 +164,7 @@ def train():
                 
                 print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
                 for k, v in eval_metrics.items():
-                    eval_metrics[k] = np.mean(v)
+                    eval_metrics[k] = np.mean(v / len(valid_loader))
                     print(f"Eval {k}: {round(eval_metrics[k].mean(), 3)}", end= '|')
                     
                 if opt['wandb']: 
@@ -181,18 +179,19 @@ def train():
         print(f"[Train] Epoch {epoch}|{loss_tracker}|{acc_tracker}")
         
         
-        pred = torch.cat(all_train_preds, dim=0)
-        gt = torch.cat(all_train_gts, dim=0)
-        iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
-        
-        iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
-        train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_)
-        train_metrics['prec'] = train_metrics.get('prec', 0) + np.array(prec_)
-        train_metrics['recall'] = train_metrics.get('recall', 0) + np.array(recall_)
-        train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_)
+        # if train_opt['mode'] == 'classification':
+        #     pred = torch.cat(all_train_preds, dim=0)
+        #     gt = torch.cat(all_train_gts, dim=0)
+        #     # iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
+            
+        #     iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
+        #     train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_)*batch_size
+        #     train_metrics['prec'] = train_metrics.get('prec', 0) + np.array(prec_)*batch_size
+        #     train_metrics['recall'] = train_metrics.get('recall', 0) + np.array(recall_)*batch_size
+        #     train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_)*batch_size
         
         for k, v in train_metrics.items():
-            train_metrics[k] = np.mean(v)
+            train_metrics[k] = np.mean(v / len(train_loader))
             print(f"Train {k}: {round(train_metrics[k], 3)}", end= '|')
             
         if opt['wandb']: wandb.log({f"train_{k}": v for k, v in train_metrics.items()})
@@ -202,6 +201,7 @@ def train():
         loss_tracker.reset()
         acc_tracker.reset()
         
+        torch.save(model.state_dict(), os.path.join(working_dir, '_last.pt'))
             
     return
 
@@ -233,23 +233,25 @@ def evaluate():
         elif train_opt['mode']=='classification':
             iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
         else: assert(0), train_opt['mode']
-        acc_tracker.update(acc_, batch_size)
         
-        # metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)*batch_size
-        # metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)*batch_size
-        # metrics['recall'] = metrics.get('recall', 0) + np.array(recall_)*batch_size
-        # metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
-        # metrics['loss'] = metrics.get('loss', 0) + np.array(loss.detach().cpu().item())
-        all_preds.append(pred.clone().detach().cpu())
-        all_gts.append(gt.clone().detach().cpu())
+        metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)
+        metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)
+        metrics['recall'] = metrics.get('recall', 0) + np.array(recall_)
+        metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
+        metrics['loss'] = metrics.get('loss', 0) + np.array(loss.detach().cpu().item()) 
+            # all_preds.append(pred.clone().detach().cpu())
+            # all_gts.append(gt.clone().detach().cpu()
+        acc_tracker.update(acc_, batch_size)
     
-    pred = torch.cat(all_preds, dim=0)
-    gt = torch.cat(all_gts, dim=0)
-    iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
-    metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)
-    metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)
-    metrics['recall'] = metrics.get('recall', 0) + np.array(recall_)
-    metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
+    # print(all_preds)
+    # if train_opt['mode']=='classification':
+    #     pred = torch.cat(all_preds, dim=0)
+    #     gt = torch.cat(all_gts, dim=0)
+    #     iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
+    #     metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)
+    #     metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)
+    #     metrics['recall'] = metrics.get('recall', 0) + np.array(recall_)
+    #     metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
         
     # print(utils.compute_all_metrics(pred, gt))
     

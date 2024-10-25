@@ -155,7 +155,7 @@ def compare(y_true, y_pred, num_classes):
     # num_classes -= 1 # skip background
     
     # Loop through each class and calculate metrics
-    for class_id in range(1, num_classes):
+    for class_id in range(0, num_classes):
         # True Positive (TP): predicted correctly as the current class
         TP = np.sum((y_true == class_id) & (y_pred == class_id))
         
@@ -167,6 +167,19 @@ def compare(y_true, y_pred, num_classes):
         
         # False Negative (FN): actually the current class, but predicted as not
         FN = np.sum((y_true == class_id) & (y_pred != class_id))
+        
+        # if class_id==0:
+        
+        #     TP = np.sum(((y_true == 6) | (y_true==0)) & ((y_pred == 6) | (y_pred==0)))
+            
+        #     # True Negative (TN): predicted correctly as NOT the current class
+        #     TN = np.sum(((y_true != 6) & (y_true != 0)) & ((y_pred != 6) & (y_pred != 0)))
+            
+        #     # False Positive (FP): predicted as the current class, but actually is not
+        #     FP = np.sum(((y_true != 6) & (y_true != 0)) & ((y_pred == 6) | (y_pred==0)))
+            
+        #     # False Negative (FN): actually the current class, but predicted as not
+        #     FN = np.sum(((y_true == 6) | (y_pred==0)) & ((y_pred != 6) & (y_pred != 0)))
         
         # Calculate IoU, Precision, Recall, Accuracy
         IoU = TP / (TP + FP + FN) if (TP + FP + FN) > 0 else 1
@@ -200,14 +213,19 @@ def compare(y_true, y_pred, num_classes):
     return metrics
 
 if __name__=='__main__':
-    gt_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS/'
-    pred_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/infer/smooth_vit/ViT_baseline'
+    gt_folder = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS'
+    # pred_folder = '/home/user01/aiotlab/nmduong/BoneTumor/src/infer/smooth_uni/UNI_lora_cls'
+    # pred_folder = '/home/user01/aiotlab/nmduong/BoneTumor/src/infer/smooth_vit/ViT_baseline'
+    # pred_folder = '/home/user01/aiotlab/nmduong/BoneTumor/src/infer/smooth_resnet/ResNet_baseline'
+    # pred_folder = '/home/user01/aiotlab/nmduong/BoneTumor/src/infer/smooth_uni_last/UNI_lora_cls'
+    pred_folder = '/home/user01/aiotlab/nmduong/BoneTumor/src/infer/smooth_stacked_discrete_ensemble_ce/stacked_bbdm_discrete'
+    
     
     case_names = [n for n in os.listdir(gt_folder) if os.path.isdir(os.path.join(gt_folder, n))]
     overall_metrics = {}
     cnt = 0
     
-    valid_cases = [f"Case_{i}" for i in [6]]
+    valid_cases = [f"Case_{i}" for i in [6, 8]]
     train_cases = [f"Case_{i}" for i in [1, 2, 3, 4, 5, 7, 9, 10]]
     
     process_cases = valid_cases

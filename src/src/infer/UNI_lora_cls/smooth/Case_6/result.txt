@@ -1,0 +1,20 @@
+=======/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/RAW_DATA/images/Case_6=======
+slide-2024-08-31T12-55-40-R1-S16.png
+background - 1.0
+viable - 0.0
+necrosis - 0.0
+fibrosis/hyalination - 0.0
+hemorrhage/cystic-change - 0.0
+inflammatory - 0.0
+non-tumor - 0.0
+-------------
+slide-2024-09-02T10-20-17-R1-S8.png
+background - 1.0
+viable - 0.0
+necrosis - 0.0
+fibrosis/hyalination - 0.0
+hemorrhage/cystic-change - 0.0
+inflammatory - 0.0
+non-tumor - 0.0
+-------------
+slide-2024-09-02T08-52-06-R1-S1.png

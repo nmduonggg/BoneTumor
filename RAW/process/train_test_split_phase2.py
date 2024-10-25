@@ -37,14 +37,22 @@ def write_to_json(train_indices, valid_indices, test_indices,
 
 if __name__=='__main__':
     
-    metadata_path = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE/metadata.json'   # update continuously
-    dataset_outpath = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/phase2_training_data/_DENOISE/dataset_split.json'
+    metadata_path = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2/metadata.json'   # update continuously
+    dataset_outpath = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2/dataset_split.json'
     
     with open(metadata_path, 'r') as f:
         data_list = json.load(f)
+       
+    # avoid overlap
+    start_id = 0
+    for i, dt in enumerate(data_list):
+        if dt['crop_index'] == 1:
+            start_id = i
+    # print(cnt)
+    data_list = data_list[start_id:]
     
     train_ratio = 0.9
-    valid_ratio = 0.08
+    valid_ratio = 0.1
         
     num_items = len(data_list)
         
@@ -54,3 +62,7 @@ if __name__=='__main__':
         
     write_to_json(train_indices, valid_indices, test_indices,
                   path = dataset_outpath)
+    
+    new_metadata_path = metadata_path.replace('.json', '_reindex.json')
+    with open(new_metadata_path, 'w') as f:
+        json.dump(data_list, f, indent=4)
