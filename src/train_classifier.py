@@ -62,6 +62,7 @@ if opt['path']['pretrain_model'] is not None:
     new_state_dict = state_dict
     # new_state_dict={k:v if v.size()==current_dict[k].size()  else  current_dict[k] for k,v in zip(current_dict.keys(), state_dict.values())}    # fix the size of checkpoint state dict
     _strict=True
+    
     if opt['name'] == 'ProvGigaPath':   # Not load trained weight but the quantized pretrained weight for FM encoder
         new_state_dict = {k: v for k, v in new_state_dict.items() if 'classifier' in k}
         _strict=False
