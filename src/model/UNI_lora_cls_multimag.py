@@ -17,7 +17,7 @@ class UNI_lora_cls_MultiMag(nn.Module):
         model = timm.create_model(
             "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
         )
-        self.scales = [1, 2, 4, 8]
+        self.scales = [0, 1, 2, 3]
         
         self.tile_encoder = model
         
