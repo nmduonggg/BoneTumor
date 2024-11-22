@@ -69,14 +69,15 @@ class ClassificationDataset_MultiMag(Dataset):
         
     def random_scale_crop(self, image, mask):
         h, w = image.shape[:2]
-        scale = np.random.choice([1, 2, 4, 8])
+        hat = np.random.choice([0, 1, 2, 3])
+        scale = 2 ** hat
         new_h, new_w = int(h * scale), int(w * scale)
         image = cv2.resize(image, (new_w, new_h))
         mask = cv2.resize(mask, (new_w, new_h))
         augmented = self.crop(image=image, mask=mask)
         image, mask = augmented['image'], augmented['mask']
         
-        return image, mask
+        return image, mask, hat
         
     def __len__(self):
         return len(self.indices)
@@ -92,7 +93,7 @@ class ClassificationDataset_MultiMag(Dataset):
         y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
         
-        x, y = self.random_scale_crop(x, y) # randm magnification
+        x, y, hat = self.random_scale_crop(x, y) # randm magnification
         
         y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
         
@@ -114,4 +115,4 @@ class ClassificationDataset_MultiMag(Dataset):
         x = self.transform(x).float()
         y = torch.tensor(y).long() 
         
-        return x, y
+        return x, y, hat

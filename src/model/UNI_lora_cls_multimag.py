@@ -8,22 +8,23 @@ import timm
 import loralib as lora
 from huggingface_hub import hf_hub_download
 
-class UNI_lora_cls(nn.Module):
+class UNI_lora_cls_MultiMag(nn.Module):
     def __init__(self, out_nc):
-        super(UNI_lora_cls, self).__init__()
+        super(UNI_lora_cls_MultiMag, self).__init__()
         
-        # model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
-        #                           pretrained=True, init_values=1e-5, dynamic_img_size=True)
-        model = timm.create_model(
-            "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
-        )
+        model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
+                                  pretrained=True, init_values=1e-5, dynamic_img_size=True)
+        # model = timm.create_model(
+        #     "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
+        # )
+        self.scales = [1, 2, 4, 8]
         
         self.tile_encoder = model
         
-        self.classifier = nn.Sequential(
+        self.classifiers = nn.ModuleList([nn.Sequential(
             nn.Linear(1024, 512), nn.ReLU(),
             nn.Linear(512, out_nc)
-        )
+        ) for scale in self.scales])
         
         self.apply_lora_to_vit(16, 32)
 
@@ -32,11 +33,19 @@ class UNI_lora_cls(nn.Module):
         feature = self.tile_encoder(x)
         return feature
         
-    def forward(self, x):
+    def forward(self, x, scale=None):
         bs, c, h, w = x.shape
         feature = self.tile_encoder(x)
-        out = self.classifier(feature)
-        return out
+        
+        all_preds = []
+        scale_mask = F.one_hot(scale, num_classes = len(self.scales)).squeeze(1) # Bx1 -> Bx4
+        for i in self.scales:
+            out = self.classifiers[i](feature)  # BxC
+            all_preds.append(out)
+        all_preds = torch.stack(all_preds, dim=1)  # Bx4xC
+        final_pred = torch.sum(all_preds * scale_mask.unsqueeze(-1), dim=1).squeeze(1)  # Bx4xC -> BxC
+        
+        return final_pred
     
     def full_forward(self, x):
         bs, c, h, w = x.shape

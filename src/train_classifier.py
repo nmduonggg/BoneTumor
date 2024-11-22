@@ -126,12 +126,18 @@ def train():
         model.train()
         all_train_preds = []
         all_train_gts = []
-        for im, gt in tqdm(train_loader, total=len(train_loader)):
+        scale = None
+        for batch in tqdm(train_loader, total=len(train_loader)):
+            if len(batch)==2:
+                im, gt = batch
+            else:
+                im, gt, scale = batch
             batch_size = im.shape[0]
             im = im.to(device)
             gt = gt.to(device)
+            scale  = scale.to(device)
             
-            pred = model(im)
+            pred = model(im, scale=scale)
             # loss = loss_func(pred, gt) + 0.5 * regularization(pred, gt)
             loss = loss_func(pred, gt)
             

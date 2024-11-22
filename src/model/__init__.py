@@ -6,6 +6,7 @@ from .ResNet_baseline import ResNet_baseline
 from .MobileNetV2_baseline import MobileNetV2_baseline
 from .UNet_baseline import UNet
 from .SegFormer_baseline import Segformer
+from .UNI_lora_cls_multimag import UNI_lora_cls_MultiMag
 
 
 from .Transformer_reorder import TransformerReorder
@@ -16,6 +17,8 @@ from .DiscreteStackedDiffusion_model import DiscreteStackedDiffusionModel
 def create_model(opt):
     if opt['network_G']['which_model_G'] == 'uni_lora_cls':
         return UNI_lora_cls(opt['network_G']['out_nc'])
+    if opt['network_G']['which_model_G'] == 'uni_lora_cls_multimag':
+        return UNI_lora_cls_MultiMag(opt['network_G']['out_nc'])
     elif opt['network_G']['which_model_G'] == 'vit_baseline':
         return ViT_baseline(opt['network_G']['out_nc'])
     elif opt['network_G']['which_model_G'] == 'resnet_baseline':
