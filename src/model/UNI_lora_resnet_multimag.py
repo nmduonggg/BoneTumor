@@ -22,7 +22,8 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         self.tile_encoder = model
         
         self.context_encs = nn.ModuleList([
-            timm.create_model('resnet50.a1_in1k', img_size=256, pretrained=True) for _ in range(len(self.scales)-1)
+            timm.create_model('resnet50.a1_in1k', pretrained=True,
+                              features_only=True) for _ in range(len(self.scales)-1)
         ])
         
         
@@ -46,6 +47,8 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         all_features = []
         for i in range(n-1):
             with torch.no_grad():
+                context_feature = self.context_encs[i](x[:, i, ...])[-1]
+                context_feature = torch.mean(context_feature.reshape(bs, 1024, -1), dim=-1)
                 all_features.append(self.context_encs[i](x[:, i, ...]))
         
         # 20x extracting
