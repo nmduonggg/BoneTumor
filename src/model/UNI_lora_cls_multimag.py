@@ -48,7 +48,7 @@ class UNI_lora_cls_MultiMag(nn.Module):
         feature = self.tile_encoder(x)
         feature = feature.reshape(bs, n, -1)
         feature = torch.mean(feature, dim=1)
-        out = self.classifier(out)
+        out = self.classifier(feature)
         
         return out
     
