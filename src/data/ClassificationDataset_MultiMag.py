@@ -57,7 +57,8 @@ class ClassificationDataset_MultiMag(Dataset):
             ]
         )
         
-        self.crop = A.RandomCrop(width=256, height=256)
+        self.scales = [0, 1, 2, 3]
+        self.crop = A.CenterCrop(width=256, height=256)
 
         self.augmentation = A.Compose([
             A.VerticalFlip(p=0.5),
@@ -78,6 +79,21 @@ class ClassificationDataset_MultiMag(Dataset):
         image, mask = augmented['image'], augmented['mask']
         
         return image, mask, hat
+    
+    def scale_crop(self, image, mask):
+        h, w = image.shape[:2]
+        # hat = np.random.choice([0, 1, 2, 3])
+        images, masks = list(), list()
+        for hat in self.scales:
+            scale = 2 ** hat
+            new_h, new_w = int(h * scale), int(w * scale)
+            image = cv2.resize(image, (new_w, new_h))
+            mask = cv2.resize(mask, (new_w, new_h))
+            augmented = self.crop(image=image, mask=mask)
+            image, mask = augmented['image'], augmented['mask']
+            images.append(image)
+            masks.append(mask)
+        return images, masks, self.scales
         
     def __len__(self):
         return len(self.indices)
@@ -93,9 +109,13 @@ class ClassificationDataset_MultiMag(Dataset):
         y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
         
-        x, y, hat = self.random_scale_crop(x, y) # randm magnification
+        # x, y, hat = self.random_scale_crop(x, y) # randm magnification
+        xs, ys, _ = self.scale_crop(x, y)
+        for i, y in enumerate(ys):
+            ys[i] = apply_threshold_mapping(y, self.target_colors, self.tolerance)
+            ys[i] = torch.tensor(ys[i]).long()
         
-        y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
+        # y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
         
         # if abs(np.mean(x) - 255) < 20:
         #     y = 0
@@ -110,9 +130,14 @@ class ClassificationDataset_MultiMag(Dataset):
             #     x = np.ones_like(x) * 255
             #     y = np.ones_like(y) * 255
             # if int(y) not in [0, 6]:
-            x = self.augmentation(image=x)['image']
+            for i, x in enumerate(xs):
+                xs[i] = self.augmentation(image=x)['image']
         
-        x = self.transform(x).float()
-        y = torch.tensor(y).long() 
+        for i, x in enumerate(xs):
+            xs[i] = self.transform(x).float()
+        # y = torch.tensor(y).long() 
         
-        return x, y, hat
+        x = torch.stack(xs, dim=0)  # NxCxHxW
+        y = ys[-1]
+        
+        return x, y, self.scales

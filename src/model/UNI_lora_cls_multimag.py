@@ -21,10 +21,16 @@ class UNI_lora_cls_MultiMag(nn.Module):
         
         self.tile_encoder = model
         
-        self.classifiers = nn.ModuleList([nn.Sequential(
+        # self.classifiers = nn.ModuleList([nn.Sequential(
+        #     nn.Linear(1024, 512), nn.ReLU(),
+        #     nn.Linear(512, out_nc)
+        # ) for scale in self.scales])
+        
+        
+        self.classifier = nn.Sequential(
             nn.Linear(1024, 512), nn.ReLU(),
             nn.Linear(512, out_nc)
-        ) for scale in self.scales])
+        )
         
         self.apply_lora_to_vit(16, 32)
 
@@ -34,18 +40,17 @@ class UNI_lora_cls_MultiMag(nn.Module):
         return feature
         
     def forward(self, x, scale=None):
-        bs, c, h, w = x.shape
+        if x.dim()==4:
+            bs, c, h, w = x.shape
+        elif x.dim()>4:
+            bs, n, c, h, w, = x.shape
+        x = x.reshape(-1, c, h, w)
         feature = self.tile_encoder(x)
+        feature = feature.reshape(bs, n, -1)
+        feature = torch.mean(feature, dim=1)
+        out = self.classifier(out)
         
-        all_preds = []
-        scale_mask = F.one_hot(scale, num_classes = len(self.scales)).squeeze(1) # Bx1 -> Bx4
-        for i in self.scales:
-            out = self.classifiers[i](feature)  # BxC
-            all_preds.append(out)
-        all_preds = torch.stack(all_preds, dim=1)  # Bx4xC
-        final_pred = torch.sum(all_preds * scale_mask.unsqueeze(-1), dim=1).squeeze(1)  # Bx4xC -> BxC
-        
-        return final_pred
+        return out
     
     def full_forward(self, x):
         bs, c, h, w = x.shape
