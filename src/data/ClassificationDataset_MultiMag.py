@@ -140,4 +140,4 @@ class ClassificationDataset_MultiMag(Dataset):
         x = torch.stack(xs, dim=0)  # NxCxHxW
         y = ys[-1]
         
-        return x, y, self.scales
+        return x, y, self.scales[-1]
