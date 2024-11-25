@@ -8,7 +8,7 @@ import timm
 import loralib as lora
 from huggingface_hub import hf_hub_download
 
-class UNI_lora_cls_MultiMag(nn.Module):
+class UNI_lora_resnet_MultiMag(nn.Module):
     def __init__(self, out_nc):
         super(UNI_lora_cls_MultiMag, self).__init__()
         
