@@ -70,7 +70,7 @@ class ClassificationDataset_MultiMag(Dataset):
         
     def center_crop(self, image, mask, h, w):
         cropper = A.CenterCrop(width=w, height=h)
-        return cropper(image, mask)
+        return cropper(image=image, mask=mask)
         
     def random_scale_crop(self, image, mask):
         h, w = image.shape[:2]
@@ -136,6 +136,6 @@ class ClassificationDataset_MultiMag(Dataset):
         # x = torch.stack(xs, dim=0)  # NxCxHxW
         y = ys[-1]
         
-        x2, x1, x0 = x
+        x2, x1, x0 = xs
         
         return x2, x1, x0, y, self.scales[-1]
