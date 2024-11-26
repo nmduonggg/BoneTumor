@@ -107,7 +107,7 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         # for classifier in self.classifiers:
         for param in self.classifier.parameters():
             param.requires_grad = True
-        
+
         for param in self.context_enc1.parameters():
             param.requires_grad = True
         for param in self.context_enc2.parameters():

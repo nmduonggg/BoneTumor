@@ -231,14 +231,17 @@ def evaluate():
         if len(batch)==2:
             im, gt = batch
         else:
-            im, gt, scale = batch
+            im2, im1, im0, gt, scale = batch
             scale = scale.to(device)
         batch_size = im.shape[0]
-        im = im.to(device)
+        im2 = im2.to(device)
+        im1 = im1.to(device)
+        im0 = im0.to(device)
         gt = gt.to(device)
+        scale  = scale.to(device)
         
         with torch.no_grad():
-            pred = model(im, scale=scale)
+            pred = model(im0, im1, im2, scale=scale)
             
         loss = loss_func(pred, gt)
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
