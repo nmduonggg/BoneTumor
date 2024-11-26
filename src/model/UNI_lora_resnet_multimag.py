@@ -21,10 +21,11 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         
         self.tile_encoder = model
         
-        self.context_encs = nn.ModuleList([
-            timm.create_model('resnet50.a1_in1k', pretrained=True,
-                              features_only=True) for _ in range(len(self.scales)-1)
-        ])
+        self.context_enc1 = timm.create_model('resnet50.a1_in1k', pretrained=True,
+                              features_only=True) 
+        
+        self.context_enc2 = timm.create_model('resnet50.a1_in1k', pretrained=True,
+                              features_only=True) 
         
         
         self.classifier = nn.Sequential(
@@ -39,21 +40,21 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         feature = self.tile_encoder(x)
         return feature
         
-    def forward(self, x, scale=None):
-        assert (x.dim() > 4), "dim x should be BxNxCxHxW"
-        bs, n, c, h, w, = x.shape
+    def forward(self, x0, x1, x2, scale=None):
+        """x0: original version. xn: n-downscaled versions"""
+        bs, c, h, w, = x0.shape
         
         # multi-mag context extracting
-        all_features = []
-        for i in range(n-1):
-            context_feature = self.context_encs[i](x[:, i, ...])[-2]
-            context_feature = torch.mean(context_feature.reshape(bs, 1024, -1), dim=-1)
-            all_features.append(context_feature)
+        
+        feat_1 = torch.mean(
+            self.context_enc1(x1)[-2].reshape(bs, 1024, -1), dim=-1)
+        feat_2 = torch.mean(
+            self.context_enc2(x2)[-2].reshape(bs, 1024, -1), dim=-1)
         
         # 20x extracting
-        feature = self.tile_encoder(x[:, -1, ...])
-        all_features.append(feature)
-        feature = torch.stack(all_features, dim=1)  # bxnx...
+        feat_0 = self.tile_encoder(x0)
+        
+        feature = torch.stack([feat_1, feat_2, feat_0], dim=1)  # bxnx...
         feature = torch.mean(feature, dim=1)    # can be cross attention later
         out = self.classifier(feature)
         
@@ -105,4 +106,9 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         # Enable gradients for the classifier head
         # for classifier in self.classifiers:
         for param in self.classifier.parameters():
+            param.requires_grad = True
+        
+        for param in self.context_enc1.parameters():
+            param.requires_grad = True
+        for param in self.context_enc2.parameters():
             param.requires_grad = True

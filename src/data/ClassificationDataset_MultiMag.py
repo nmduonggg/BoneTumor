@@ -58,7 +58,7 @@ class ClassificationDataset_MultiMag(Dataset):
         )
         
         self.scales = [0, 1, 2]
-        self.crop = A.CenterCrop(width=256, height=256)
+        # self.crop = A.CenterCrop(width=256, height=256)
 
         self.augmentation = A.Compose([
             A.VerticalFlip(p=0.5),
@@ -67,6 +67,10 @@ class ClassificationDataset_MultiMag(Dataset):
             A.RandomBrightnessContrast(p=0.1),
             A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),]
         )
+        
+    def center_crop(self, image, mask, h, w):
+        cropper = A.CenterCrop(width=w, height=h)
+        return cropper(image, mask)
         
     def random_scale_crop(self, image, mask):
         h, w = image.shape[:2]
@@ -86,11 +90,11 @@ class ClassificationDataset_MultiMag(Dataset):
         images, masks = list(), list()
         for hat in self.scales:
             scale = 2 ** hat
-            new_h, new_w = int(h * scale), int(w * scale)
-            image = cv2.resize(image, (new_w, new_h))
-            mask = cv2.resize(mask, (new_w, new_h))
-            augmented = self.crop(image=image, mask=mask)
+            new_h, new_w = int(h // scale), int(w // scale)
+            augmented = self.center_crop(image=image, mask=mask, h=new_h, w=new_w)
             image, mask = augmented['image'], augmented['mask']
+            # image = cv2.resize(image, (new_w, new_h))
+            # mask = cv2.resize(mask, (new_w, new_h))
             images.append(image)
             masks.append(mask)
         return images, masks, self.scales
@@ -109,6 +113,11 @@ class ClassificationDataset_MultiMag(Dataset):
         y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
         
+        if self.opt['augment']:
+            # for i, x in enumerate(xs):
+            #     xs[i] = self.augmentation(image=x)['image']
+            x = self.augmentation(image=x)['image']
+        
         # x, y, hat = self.random_scale_crop(x, y) # randm magnification
         xs, ys, _ = self.scale_crop(x, y)
         for i, y in enumerate(ys):
@@ -120,24 +129,13 @@ class ClassificationDataset_MultiMag(Dataset):
         # if abs(np.mean(x) - 255) < 20:
         #     y = 0
         
-        if self.opt['augment']:
-            # augmented = self.augmentation(image=x, mask=y)
-            # x = augmented['image']
-            # y = augmented['mask']
-            
-            # p = np.random.random()
-            # if p > 0.8:
-            #     x = np.ones_like(x) * 255
-            #     y = np.ones_like(y) * 255
-            # if int(y) not in [0, 6]:
-            for i, x in enumerate(xs):
-                xs[i] = self.augmentation(image=x)['image']
-        
         for i, x in enumerate(xs):
             xs[i] = self.transform(x).float()
         # y = torch.tensor(y).long() 
         
-        x = torch.stack(xs, dim=0)  # NxCxHxW
+        # x = torch.stack(xs, dim=0)  # NxCxHxW
         y = ys[-1]
         
-        return x, y, self.scales[-1]
+        x2, x1, x0 = x
+        
+        return x2, x1, x0, y, self.scales[-1]
