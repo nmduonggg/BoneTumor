@@ -46,13 +46,12 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         # multi-mag context extracting
         all_features = []
         for i in range(n-1):
-            with torch.no_grad():
-                context_feature = self.context_encs[i](x[:, i, ...])[-1]
-                context_feature = torch.mean(context_feature.reshape(bs, 1024, -1), dim=-1)
-                all_features.append(self.context_encs[i](x[:, i, ...]))
+            context_feature = self.context_encs[i](x[:, i, ...])[-2]
+            context_feature = torch.mean(context_feature.reshape(bs, 1024, -1), dim=-1)
+            all_features.append(context_feature)
         
         # 20x extracting
-        feature = self.tile_encoder(x[bs, -1, ...])
+        feature = self.tile_encoder(x[:, -1, ...])
         all_features.append(feature)
         feature = torch.stack(all_features, dim=1)  # bxnx...
         feature = torch.mean(feature, dim=1)    # can be cross attention later
