@@ -136,6 +136,6 @@ class ClassificationDataset_MultiMag(Dataset):
         # x = torch.stack(xs, dim=0)  # NxCxHxW
         y = ys[-1]
         
-        x2, x1, x0 = xs
+        x0, x1, x2 = xs
         
-        return x2, x1, x0, y, self.scales[-1]
+        return x0, x1, x2, y, self.scales[-1]

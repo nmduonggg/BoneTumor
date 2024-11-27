@@ -132,7 +132,7 @@ def train():
             if len(batch)==2:
                 im, gt = batch
             else:
-                im2, im1, im0, gt, scale = batch
+                im0, im1, im2, gt, scale = batch
                 scale = scale.to(device)
             batch_size = im0.shape[0]
             im2 = im2.to(device)
@@ -231,7 +231,7 @@ def evaluate():
         if len(batch)==2:
             im, gt = batch
         else:
-            im2, im1, im0, gt, scale = batch
+            im0, im1, im2, gt, scale = batch
             scale = scale.to(device)
         batch_size = im0.shape[0]
         im2 = im2.to(device)
