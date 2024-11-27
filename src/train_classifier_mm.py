@@ -91,7 +91,7 @@ for name, params in model.named_parameters():
 
 def train():
     
-    model.to(device)
+    model = model.to(device)
     
     #### Initialization ####
     loss_tracker = utils.MetricTracker('Train Loss')
@@ -175,7 +175,7 @@ def train():
                 print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
                 for k, v in eval_metrics.items():
                     eval_metrics[k] = np.mean(v / len(valid_loader))
-                    print(f"Eval {k}: {round(eval_metrics[k].mean(), 3)}", end= '|')
+                    print(f"Eval {k}: {round(eval_metrics[k], 3)}", end= '|')
                     
                 if opt['wandb']: 
                     wandb.log({f"eval_{k}": v for k, v in eval_metrics.items()})
@@ -185,6 +185,7 @@ def train():
                     # best_acc = eval_acc.avg
                     best_prec = eval_metrics['prec']
                     torch.save(model.state_dict(), os.path.join(working_dir, '_best.pt'))
+                    
             
         print(f"[Train] Epoch {epoch}|{loss_tracker}|{acc_tracker}")
         
