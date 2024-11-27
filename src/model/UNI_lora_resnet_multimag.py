@@ -46,13 +46,14 @@ class UNI_lora_resnet_MultiMag(nn.Module):
         
         # multi-mag context extracting
         
+        # x5 & x10
+        feat_0 = torch.mean(
+            self.context_enc1(x0)[-2].reshape(bs, 1024, -1), dim=-1)
         feat_1 = torch.mean(
-            self.context_enc1(x1)[-2].reshape(bs, 1024, -1), dim=-1)
-        feat_2 = torch.mean(
-            self.context_enc2(x2)[-2].reshape(bs, 1024, -1), dim=-1)
+            self.context_enc2(x1)[-2].reshape(bs, 1024, -1), dim=-1)
         
         # 20x extracting
-        feat_0 = self.tile_encoder(x0)
+        feat_2 = self.tile_encoder(x2)
         
         feature = torch.stack([feat_1, feat_2, feat_0], dim=1)  # bxnx...
         feature = torch.mean(feature, dim=1)    # can be cross attention later

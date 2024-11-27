@@ -34,7 +34,7 @@ datasets:
     width: 1024
     batch_size: 1024
     augment: false
-    n_workers: 32
+    n_workers: 128
 
   test:
     type: test
