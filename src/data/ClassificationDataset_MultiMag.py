@@ -139,7 +139,6 @@ class ClassificationDataset_MultiMag(Dataset):
         
         for i, x in enumerate(xs):
             xs[i] = self.transform(x).float()
-        # y = torch.tensor(y).long() 
         
         # x = torch.stack(xs, dim=0)  # NxCxHxW
         y = ys[-1]

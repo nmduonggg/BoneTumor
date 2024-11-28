@@ -78,7 +78,7 @@ if hasattr(model, "enable_lora_training"):
     
 optimizer = utils.create_optimizer(model.parameters(), train_opt)
 
-weight = torch.tensor([0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2]).to(device)
+weight = torch.tensor([0.2, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2])
 weight = weight / torch.sum(weight)
 loss_func = nn.CrossEntropyLoss(weight=weight)
 # loss_func = FocalLoss().to(device)
@@ -386,17 +386,23 @@ def test():
         
     
 if __name__ == '__main__':
-    if opt['is_train']:
-        print("[INFO] Start training...")
-        if opt['wandb']:
-            wandb.login(key="60fd0a73c2aefc531fa6a3ad0d689e3a4507f51c")
-            wandb.init(
-                project="BoneTumor",
-                name=opt['name'])
-        train()
-    elif opt['is_test']:
-        print("[INFO] Start testing...")
-        test()
+    # if opt['is_train']:
+    #     print("[INFO] Start training...")
+    #     if opt['wandb']:
+    #         wandb.login(key="60fd0a73c2aefc531fa6a3ad0d689e3a4507f51c")
+    #         wandb.init(
+    #             project="BoneTumor",
+    #             name=opt['name'])
+    #     train()
+    # elif opt['is_test']:
+    #     print("[INFO] Start testing...")
+    #     test()
+    import matplotlib.pyplot as plt
+    im0, im1, im2, gt,  _ = train_set[69522]
+    plt.imsave('im0.png', (im0).astype(np.uint8))
+    plt.imsave('im1.png', (im1).astype(np.uint8))
+    plt.imsave('im2.png', (im2).astype(np.uint8))
+    plt.imsave('gt.png', (gt).astype(np.uint8))
         
         
         
