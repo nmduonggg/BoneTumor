@@ -69,7 +69,7 @@ class ClassificationDataset_MultiMag(Dataset):
         )
         
     def center_crop(self, image, mask, h, w):
-        cropper = A.CenterCrop(width=w, height=h)
+        cropper = A.RandomCrop(width=w, height=h)
         return cropper(image=image, mask=mask)
         
     def random_scale_crop(self, image, mask):
@@ -116,7 +116,9 @@ class ClassificationDataset_MultiMag(Dataset):
         if self.opt['augment']:
             # for i, x in enumerate(xs):
             #     xs[i] = self.augmentation(image=x)['image']
-            x = self.augmentation(image=x)['image']
+            augmented = self.augmentation(image=x, mask=y)
+            x = augmented['imgage']
+            y = augmented['mask']
         
         # x, y, hat = self.random_scale_crop(x, y) # randm magnification
         xs, ys, _ = self.scale_crop(x, y)
