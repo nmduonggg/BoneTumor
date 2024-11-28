@@ -39,15 +39,15 @@ class UNI_lora_cls_MultiMag(nn.Module):
         feature = self.tile_encoder(x)
         return feature
         
-    def forward(self, x, scale=None):
-        if x.dim()==4:
-            bs, c, h, w = x.shape
-        elif x.dim()>4:
-            bs, n, c, h, w, = x.shape
-        x = x.reshape(-1, c, h, w)
-        feature = self.tile_encoder(x)
-        feature = feature.reshape(bs, n, -1)
+    def forward(self, x0, x1, x2, scale=None):
+        """x0: original version. xn: n-downscaled versions"""
+        bs, c, h, w = x0.shape
+        feat_0 = self.tile_encoder(x0)
+        feat_1 = self.tile_encoder(x1)
+        feat_2 = self.tile_encoder(x2)
+        feature = torch.stack([feat_0, feat_1, feat_2], dim=1)
         feature = torch.mean(feature, dim=1)
+        
         out = self.classifier(feature)
         
         return out

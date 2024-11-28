@@ -68,9 +68,22 @@ class ClassificationDataset_MultiMag(Dataset):
             A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),]
         )
         
-    def center_crop(self, image, mask, h, w):
-        cropper = A.RandomCrop(width=w, height=h)
-        return cropper(image=image, mask=mask)
+    def center_crop(self, image, mask, h, w, scales):
+        image = image
+        images = [image]
+        masks = [mask]
+        for hat in scales[1:]:
+            scale = 2 ** hat
+            new_h, new_w = int(h // scale), int(w // scale)
+            cropper = A.RandomCrop(width=new_w, height=new_h)
+            cropped = cropper(image=image, mask=mask)
+            image = cropped['image']
+            mask = cropped['mask']
+            
+            images.append(image)
+            masks.append(mask)
+        
+        return images, masks
         
     def random_scale_crop(self, image, mask):
         h, w = image.shape[:2]
@@ -87,16 +100,9 @@ class ClassificationDataset_MultiMag(Dataset):
     def scale_crop(self, image, mask):
         h, w = image.shape[:2]
         # hat = np.random.choice([0, 1, 2, 3])
-        images, masks = list(), list()
-        for hat in self.scales:
-            scale = 2 ** hat
-            new_h, new_w = int(h // scale), int(w // scale)
-            augmented = self.center_crop(image=image, mask=mask, h=new_h, w=new_w)
-            image, mask = augmented['image'], augmented['mask']
-            # image = cv2.resize(image, (new_w, new_h))
-            # mask = cv2.resize(mask, (new_w, new_h))
-            images.append(image)
-            masks.append(mask)
+        images, masks = self.center_crop(image=image, mask=mask,
+                                         h=h, w=w, scales=self.scales)
+            
         return images, masks, self.scales
         
     def __len__(self):
