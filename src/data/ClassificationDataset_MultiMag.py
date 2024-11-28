@@ -123,7 +123,7 @@ class ClassificationDataset_MultiMag(Dataset):
             # for i, x in enumerate(xs):
             #     xs[i] = self.augmentation(image=x)['image']
             augmented = self.augmentation(image=x, mask=y)
-            x = augmented['imgage']
+            x = augmented['image']
             y = augmented['mask']
         
         # x, y, hat = self.random_scale_crop(x, y) # randm magnification

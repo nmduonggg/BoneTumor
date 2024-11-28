@@ -91,7 +91,7 @@ for name, params in model.named_parameters():
 
 def train():
     
-    model = model.to(device)
+    model.to(device)
     
     #### Initialization ####
     loss_tracker = utils.MetricTracker('Train Loss')
