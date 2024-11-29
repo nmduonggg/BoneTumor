@@ -29,8 +29,9 @@ parser.add_argument('--labels_dir', type=str, required=True)
 parser.add_argument('--images_dir', type=str, required=True)
 parser.add_argument('--weight_path', type=str, required=True)
 parser.add_argument('--outdir', type=str, required=True)
-parser.add_argument('--crop_sz', type=int, default=64)
-parser.add_argument('--step', type=int, default=60)
+parser.add_argument('--crop_sz', type=int, default=256)
+parser.add_argument('--step', type=int, default=240)
+parser.add_argument('--small_sz', type=int, default=128)
 
 
 args = parser.parse_args()
@@ -198,26 +199,18 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
         patch = bg.astype(np.uint8)
         edge_score = laplacian_score(patch).mean()
         
-        # normalize
-        transform = transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-                ]
-            )
-        im = transform(patch).float().unsqueeze(0)
-        
         if edge_score <= 1: # filter background
             pred_im = np.zeros((small_h, small_w, 7))
             pred_im[:, :, 0] = 1e-9
             preds_list.append(pred_im)   # skip
             continue
         
-        im = im.to(device)
         with torch.no_grad():
-            pred = model(im)
-        pred = torch.softmax(pred, dim=-1).cpu().squeeze(0).numpy()
-        pred = np.ones((small_h, small_w, 7)) * pred
+            pred = model.hier_forward(patch)
+        # pred = torch.softmax(pred, dim=-1).cpu().squeeze(0).numpy()
+        # pred = np.ones((small_h, small_w, 7)) * pred
+        pred = pred.squeeze(0).permute(1,2,0).numpy()
+        pred = cv2.resize(pred, (small_h, small_w))
         preds_list.append(pred)
     
     kwargs['sr_list'] = preds_list

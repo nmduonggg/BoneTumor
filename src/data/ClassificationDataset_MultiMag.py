@@ -77,8 +77,9 @@ class ClassificationDataset_MultiMag(Dataset):
             new_h, new_w = int(h // scale), int(w // scale)
             cropper = A.RandomCrop(width=new_w, height=new_h)
             cropped = cropper(image=image, mask=mask)
-            image = cropped['image']
-            mask = cropped['mask']
+            image = cv2.resize(cropped['image'], h)
+            mask = cv2.resize(cropped['mask'], w, 
+                              interpolation=cv2.INTER_NEAREST)
             
             images.append(image)
             masks.append(mask)
