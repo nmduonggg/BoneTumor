@@ -121,8 +121,6 @@ class ClassificationDataset_MultiMag(Dataset):
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
         
         if self.opt['augment']:
-            # for i, x in enumerate(xs):
-            #     xs[i] = self.augmentation(image=x)['image']
             augmented = self.augmentation(image=x, mask=y)
             x = augmented['image']
             y = augmented['mask']
