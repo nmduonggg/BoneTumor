@@ -129,17 +129,18 @@ def train():
         all_train_gts = []
         scale = None
         for batch in tqdm(train_loader, total=len(train_loader)):
-            if len(batch)==2:
-                im, gt = batch
-            else:
-                im, gt, scale = batch
-                scale = scale.to(device)
+            # if len(batch)==2:
+            #     im, gt = batch
+            # else:
+            #     im, gt, scale = batch
+            #     scale = scale.to(device)
+            im, gt = batch
             batch_size = im.shape[0]
             im = im.to(device)
             gt = gt.to(device)
             scale  = scale.to(device)
             
-            pred = model(im, scale=scale)
+            pred = model(im)
             # loss = loss_func(pred, gt) + 0.5 * regularization(pred, gt)
             loss = loss_func(pred, gt)
             
@@ -226,17 +227,18 @@ def evaluate():
     all_gts = []
     scale=None
     for batch in tqdm(valid_loader, total=len(valid_loader)):
-        if len(batch)==2:
-            im, gt = batch
-        else:
-            im, gt, scale = batch
-            scale = scale.to(device)
+        # if len(batch)==2:
+        #     im, gt = batch
+        # else:
+        #     im, gt, scale = batch
+        #     scale = scale.to(device)
+        im, gt = batch
         batch_size = im.shape[0]
         im = im.to(device)
         gt = gt.to(device)
         
         with torch.no_grad():
-            pred = model(im, scale=scale)
+            pred = model(im)
             
         loss = loss_func(pred, gt)
         loss_tracker.update(loss.detach().cpu().item(), batch_size)

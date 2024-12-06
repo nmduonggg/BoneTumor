@@ -49,6 +49,7 @@ class ClassificationDataset(Dataset):
             [0, 0, 255]]    # Non-tumor tissue
         self.tolerance = 50
         
+        self.scales = [0, 1, 2]
         self.transform = transforms.Compose(
             [
                 # transforms.Resize(224),
@@ -66,6 +67,27 @@ class ClassificationDataset(Dataset):
             A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),]
         )
         
+    def center_crop(self, image, mask, h, w, scales):
+        
+        hat = scales[-1]
+        scale = 2 ** hat
+        new_h, new_w = int(h // scale), int(w // scale)
+        cropper = A.RandomCrop(width=new_w, height=new_h)
+        cropped = cropper(image=image, mask=mask)
+        image = cv2.resize(cropped['image'], (w, h))
+        mask = cv2.resize(cropped['mask'], (w, h), 
+                            interpolation=cv2.INTER_NEAREST)
+
+        return image, mask
+    
+    def scale_crop(self, image, mask):
+        h, w = image.shape[:2]
+        # hat = np.random.choice([0, 1, 2, 3])
+        image, mask = self.center_crop(image=image, mask=mask,
+                                         h=h, w=w, scales=self.scales)
+            
+        return image, mask
+        
     def __len__(self):
         return len(self.indices)
     
@@ -79,24 +101,18 @@ class ClassificationDataset(Dataset):
         
         y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
-        y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
+        if self.opt['augment']:
+            augmented = self.augmentation(image=x, mask=y)['image']
+            x = augmented['image']
+            y = augmented['mask']
         
-        # if abs(np.mean(x) - 255) < 20:
-        #     y = 0
+        x_, y_ = self.scale_crop(image=x, mask=y)
+        y_ = apply_threshold_mapping(y_, self.target_colors, self.tolerance)
         
         if self.opt['augment']:
-            # augmented = self.augmentation(image=x, mask=y)
-            # x = augmented['image']
-            # y = augmented['mask']
-            
-            # p = np.random.random()
-            # if p > 0.8:
-            #     x = np.ones_like(x) * 255
-            #     y = np.ones_like(y) * 255
-            # if int(y) not in [0, 6]:
-            x = self.augmentation(image=x)['image']
+            x_ = self.augmentation(image=x_)['image']
         
-        x = self.transform(x).float()
-        y = torch.tensor(y).long() 
+        x_ = self.transform(x_).float()
+        y_ = torch.tensor(y_).long() 
         
-        return x, y
+        return x_, y_
