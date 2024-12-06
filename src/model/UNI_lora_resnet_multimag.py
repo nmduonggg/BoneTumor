@@ -15,11 +15,11 @@ class UNI_lora_resnet_MultiMag(nn.Module):
     def __init__(self, out_nc):
         super(UNI_lora_resnet_MultiMag, self).__init__()
         
-        # model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
-        #                           pretrained=True, init_values=1e-5, dynamic_img_size=True)
-        model = timm.create_model(
-            "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
-        )
+        model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
+                                  pretrained=True, init_values=1e-5, dynamic_img_size=True)
+        # model = timm.create_model(
+        #     "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
+        # )
         self.scales = [0, 1, 2]
         self.out_nc = out_nc
         

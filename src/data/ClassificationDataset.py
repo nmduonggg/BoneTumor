@@ -102,15 +102,15 @@ class ClassificationDataset(Dataset):
         y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
         if self.opt['augment']:
-            augmented = self.augmentation(image=x, mask=y)['image']
+            augmented = self.augmentation(image=x, mask=y)
             x = augmented['image']
             y = augmented['mask']
         
         x_, y_ = self.scale_crop(image=x, mask=y)
         y_ = apply_threshold_mapping(y_, self.target_colors, self.tolerance)
         
-        if self.opt['augment']:
-            x_ = self.augmentation(image=x_)['image']
+        # if self.opt['augment']:
+        #     x_ = self.augmentation(image=x_)['image']
         
         x_ = self.transform(x_).float()
         y_ = torch.tensor(y_).long() 
