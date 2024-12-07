@@ -138,7 +138,7 @@ def train():
             batch_size = im.shape[0]
             im = im.to(device)
             gt = gt.to(device)
-            scale  = scale.to(device)
+            # scale  = scale.to(device)
             
             pred = model(im)
             # loss = loss_func(pred, gt) + 0.5 * regularization(pred, gt)
