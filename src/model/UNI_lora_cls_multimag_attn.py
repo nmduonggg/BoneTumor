@@ -59,9 +59,9 @@ class CrossAttention(nn.Module):
         return out
     
 
-class UNI_lora_cls_MultiMag(nn.Module):
+class UNI_lora_cls_MultiMag_Attn(nn.Module):
     def __init__(self, out_nc):
-        super(UNI_lora_cls_MultiMag, self).__init__()
+        super(UNI_lora_cls_MultiMag_Attn, self).__init__()
         
         model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
                                   pretrained=True, init_values=1e-5, dynamic_img_size=True)
