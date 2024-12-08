@@ -78,7 +78,7 @@ if hasattr(model, "enable_lora_training"):
     
 optimizer = utils.create_optimizer(model.parameters(), train_opt)
 
-weight = torch.tensor([0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2]).to(device)
+weight = torch.tensor([0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]).to(device)
 weight = weight / torch.sum(weight)
 loss_func = nn.CrossEntropyLoss(weight=weight)
 # loss_func = FocalLoss().to(device)

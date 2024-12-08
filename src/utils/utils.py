@@ -382,6 +382,8 @@ def compute_classification_metrics(preds, targets, drop_last=False, inv_mask=Non
     for class_idx in range(num_classes):
         # True Positives, False Positives, and False Negatives for each class
         
+        class_idx += 1
+        
         TP = ((preds == class_idx) & (targets == class_idx)).sum()  # (B,)
         FP = ((preds == class_idx) & (targets != class_idx)).sum()  # (B,)
         FN = ((preds != class_idx) & (targets == class_idx)).sum()  # (B,)
