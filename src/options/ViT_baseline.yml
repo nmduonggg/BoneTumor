@@ -13,9 +13,9 @@ datasets:
     type: train
     name: Osteosarcoma
     mode: classification
-    image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
-    label_dir: ../RAW/REAL_WSIs/training_data_256/labels
+    image_dir: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256/images
+    label_map: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
+    label_dir: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
     batch_size: 32
@@ -27,9 +27,9 @@ datasets:
     type: valid
     name: Osteosarcoma
     mode: classification
-    image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
-    label_dir: ../RAW/REAL_WSIs/training_data_256/labels
+    image_dir: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256/images
+    label_map: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
+    label_dir: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
     batch_size: 1024
@@ -40,9 +40,9 @@ datasets:
     type: test
     name: Osteosarcoma
     mode: classification
-    image_dir: ../RAW/REAL_WSIs/training_data_256/images
-    label_map: ../RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
-    label_dir: ../RAW/REAL_WSIs/training_data_256/labels
+    image_dir: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256/images
+    label_map: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json
+    label_dir: /home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/training_data_256/labels
     height: 1024
     width: 1024
     batch_size: 128
