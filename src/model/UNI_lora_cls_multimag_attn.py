@@ -99,8 +99,8 @@ class UNI_lora_cls_MultiMag_Attn(nn.Module):
         cls_1, feat_1 = feat_1[:, 0, :], feat_1[:, 1:, :]
         cls_2, feat_2 = feat_2[:, 0, :], feat_2[:, 1:, :]
         
-        feat_01 = torch.cat([cls_0.unsqueeze(1), feat_1])
-        feat_02 = torch.cat([cls_0.unsqueeze(1), feat_2])
+        feat_01 = torch.cat([cls_0.unsqueeze(1), feat_1], dim=1)
+        feat_02 = torch.cat([cls_0.unsqueeze(1), feat_2], dim=1)
         
         attn_01 = self.attn_01(feat_01)[:, 0, :]
         attn_02 = self.attn_02(feat_02)[:, 0, :]
@@ -157,4 +157,8 @@ class UNI_lora_cls_MultiMag_Attn(nn.Module):
         # Enable gradients for the classifier head
         # for classifier in self.classifiers:
         for param in self.classifier.parameters():
+            param.requires_grad = True
+        for param in self.attn_01.parameters():
+            param.requires_grad = True
+        for param in self.attn_02.parameters():
             param.requires_grad = True
