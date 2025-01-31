@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 import timm
 import loralib as lora
+import model.utils as utils
 from huggingface_hub import hf_hub_download
 
 class UNI_lora_cls_MultiMag(nn.Module):
@@ -17,15 +18,9 @@ class UNI_lora_cls_MultiMag(nn.Module):
         # model = timm.create_model(
         #     "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
         # )
-        self.scales = [0, 1, 2, 3]
+        self.scales = [0, 1, 2]
         
         self.tile_encoder = model
-        
-        # self.classifiers = nn.ModuleList([nn.Sequential(
-        #     nn.Linear(1024, 512), nn.ReLU(),
-        #     nn.Linear(512, out_nc)
-        # ) for scale in self.scales])
-        
         
         self.classifier = nn.Sequential(
             nn.Linear(1024, 512), nn.ReLU(),
@@ -33,6 +28,37 @@ class UNI_lora_cls_MultiMag(nn.Module):
         )
         
         self.apply_lora_to_vit(16, 32)
+        
+    def hier_forward(self, im0):
+        """
+        im0 is original 5x numpy image without preprocessing
+        Todo:
+            - cut into 10x 20x
+            - preprocess each, forward
+        """
+        device = next(self.classifier.parameters()).device
+        
+        im0 = self.transform(im0).float().unsqueeze(0)
+        x_im0 = torch.cat([im0 for _ in range((256 // 64))], dim=0).to(device)
+        im1s, num_h1, num_w1, h1, w1 = utils.crop_tensor(im0, crop_sz=128, step=128)
+        
+        y_im1s = []
+        for im1 in im1s:
+            x_im1 = torch.cat([im1 for _ in range(256 // 64)], dim=0).to(device)
+            im2s, num_h, num_w, h, w = utils.crop_tensor(im1, crop_sz=64, step=64)
+            x_im2 = torch.cat(im2s, dim=0).to(device)
+            
+            y_im2s = self.forward(x_im0, x_im1, x_im2, None) # BxCl
+            # print(y_im2s)
+            y_im2s = torch.ones([x_im2.size(0), 1, x_im2.size(2), x_im2.size(3)]).to(device) * y_im2s.reshape(len(im2s), -1, 1, 1)  # BxClxHxW
+            
+            y_im1 = utils.combine_output(y_im2s, num_h, num_w, h, w, 64, 64, channel=self.out_nc)
+            y_im1s.append(y_im1.cpu())
+            
+        y_im1s = torch.cat(y_im1s, dim=0)
+        y_im0 = utils.combine_output(y_im1s, num_h1, num_w1, h1, w1, 128, 128, channel=self.out_nc)
+        
+        return y_im0
 
     def encode(self, x):
         # Forward pass through the ViT model with LoRA
