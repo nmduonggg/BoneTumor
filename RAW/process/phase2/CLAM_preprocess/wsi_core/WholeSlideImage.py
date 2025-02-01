@@ -15,7 +15,7 @@ import math
 from wsi_core.wsi_utils import savePatchIter_bag_hdf5, initialize_hdf5_bag, coord_generator, save_hdf5, sample_indices, screen_coords, isBlackPatch, isWhitePatch, to_percentiles
 import itertools
 from wsi_core.util_classes import isInContourV1, isInContourV2, isInContourV3_Easy, isInContourV3_Hard, Contour_Checking_fn
-from utils.file_utils import load_pkl, save_pkl
+from file_utils import load_pkl, save_pkl
 
 Image.MAX_IMAGE_PIXELS = 933120000
 

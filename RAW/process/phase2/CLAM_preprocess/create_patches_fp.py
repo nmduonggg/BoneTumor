@@ -46,7 +46,7 @@ def patching(WSI_object, **kwargs):
 
 
 def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_dir, 
-				  patch_size = 256, step_size = 256, 
+				  patch_size = 256, step_size = 240, 
 				  seg_params = {'seg_level': -1, 'sthresh': 8, 'mthresh': 7, 'close': 4, 'use_otsu': False,
 				  'keep_ids': 'none', 'exclude_ids': 'none'},
 				  filter_params = {'a_t':100, 'a_h': 16, 'max_n_holes':8}, 
@@ -57,11 +57,14 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 				  seg = False, save_mask = True, 
 				  stitch= False, 
 				  patch = False, auto_skip=True, process_list = None):
-	
-
+    
+	save_dir = os.path.join(save_dir, f"ps_{patch_size}")
+	os.makedirs(save_dir, exist_ok=True)
 
 	slides = sorted(os.listdir(source))
-	slides = [slide for slide in slides if os.path.isfile(os.path.join(source, slide))]
+	slides = [slide for slide in slides if (os.path.isfile(os.path.join(source, slide)) and ".mrxs" in slide)]
+    # slides = list(filter(lambda x: ".mrxs" in x, slides))
+    
 	if process_list is None:
 		df = initialize_df(slides, seg_params, filter_params, vis_params, patch_params)
 	
