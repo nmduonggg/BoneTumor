@@ -29,6 +29,8 @@ def create_dataset(dataset_opt):
         from data.SegmentDataset import SegmentDataset as D
     elif mode == 'classification':
         from data.ClassificationDataset import ClassificationDataset as D
+    elif mode == 'journal_classification':
+        from data.journal.OneMag_ClassificationDataset import OneMag_ClassificationDataset as D
     elif mode == 'reorder':
         from data.ReorderDataset import ReorderDataset as D
     elif mode == 'classification_multi_mag':

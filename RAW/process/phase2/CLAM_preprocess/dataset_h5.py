@@ -4,6 +4,8 @@ import pandas as pd
 
 from torch.utils.data import Dataset
 from torchvision import transforms
+import threading
+import queue
 
 from PIL import Image
 import h5py
@@ -68,6 +70,7 @@ class WSI_Processor():
         os.makedirs(self.img_folder, exist_ok=True)
         
         self.global_id = global_id
+        self.metadata_queue = queue.Queue()
         
     def save_img(self, img, path):
         img.save(path)
@@ -76,7 +79,7 @@ class WSI_Processor():
     def process(self):
         metadatas = []
         
-        for id, data in enumerate(self.wsi_dataset):
+        for id, data in tqdm(enumerate(self.wsi_dataset), total=len(self.wsi_dataset)):
             img = data['img']
             coord = data['coord']
             
@@ -88,7 +91,7 @@ class WSI_Processor():
                 'inslide_id': id,
                 'incase_id': self.global_id
             }
-            metadata = metadata.update(self.infor_dict)
+            metadata.update(self.infor_dict)
             metadatas.append(metadata)
             
             self.global_id += 1
@@ -104,8 +107,15 @@ def parse_args():
     return args.parse_args()
 
 def data2json(data, json_path):
+    
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return super().default(obj)
+    
     with open(json_path, 'w') as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, indent=4, cls=NumpyEncoder)
     return
 
 def main_1_case():
@@ -120,11 +130,12 @@ def main_1_case():
     
     global_id = 0
     metadatas = []
-    for slide in tqdm(slides, total=len(slides)):
+    for slide in slides:
         print("===", slide, "===")
         wsi_path = os.path.join(data_dir, slide)
         coord_fn = slide.replace(".mrxs", ".h5")
         coord_path = os.path.join(coord_dir, coord_fn)
+        if not os.path.isfile(coord_path): continue
         
         infor_dict = {
             "case": os.path.basename(data_dir),
@@ -137,6 +148,7 @@ def main_1_case():
         slide_metadatas = wsi_processor.process()
         metadatas += slide_metadatas
         global_id = wsi_processor.global_id
+        
         
     # saving
     json_path = os.path.join(result_dir, infor_dict['case'], 'metadata.json')

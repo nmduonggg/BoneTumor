@@ -56,14 +56,27 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 				  use_default_params = False, 
 				  seg = False, save_mask = True, 
 				  stitch= False, 
-				  patch = False, auto_skip=True, process_list = None):
+				  patch = False, auto_skip=True, process_list = None,
+      			  gt_dir = None):
     
 	save_dir = os.path.join(save_dir, f"ps_{patch_size}")
 	os.makedirs(save_dir, exist_ok=True)
 
 	slides = sorted(os.listdir(source))
-	slides = [slide for slide in slides if (os.path.isfile(os.path.join(source, slide)) and ".mrxs" in slide)]
-    # slides = list(filter(lambda x: ".mrxs" in x, slides))
+	if gt_dir is None:
+		slides = [slide for slide in slides if (os.path.isfile(os.path.join(source, slide)) and ".mrxs" in slide)]
+	else:
+		slides = []
+		for gt in os.listdir(gt_dir):
+			if not os.path.isfile(os.path.join(gt_dir, gt)): continue
+
+			slide = gt.replace('-x8', '')
+			slide = slide.replace('-labels.jpg', '.mrxs')
+			slide = slide.replace('-labels.png', '.mrxs')
+			
+			alternative_source = source + '-2'
+			if os.path.isfile(os.path.join(source, slide)) or os.path.isfile(os.path.join(alternative_source, slide)):
+				slides.append(slide)
     
 	if process_list is None:
 		df = initialize_df(slides, seg_params, filter_params, vis_params, patch_params)
@@ -107,6 +120,10 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 
 		# Inialize WSI
 		full_path = os.path.join(source, slide)
+		if not os.path.isfile(full_path):
+			alternative_source = source + '-2'
+			full_path = os.path.join(alternative_source, slide)
+   
 		WSI_object = WholeSlideImage(full_path)
 
 		if use_default_params:
@@ -233,6 +250,8 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 parser = argparse.ArgumentParser(description='seg and patch')
 parser.add_argument('--source', type = str,
 					help='path to folder containing raw wsi image files')
+parser.add_argument('--gt_dir', type=str,
+                    help='path to folder containing gt of wsi to avoid redundancy')
 parser.add_argument('--step_size', type = int, default=256,
 					help='step_size')
 parser.add_argument('--patch_size', type = int, default=256,
@@ -253,6 +272,7 @@ parser.add_argument('--process_list',  type = str, default=None,
 if __name__ == '__main__':
 	args = parser.parse_args()
 
+	args.save_dir = os.path.join(args.save_dir, f"patchsize_{args.patch_size}")
 	patch_save_dir = os.path.join(args.save_dir, 'patches')
 	mask_save_dir = os.path.join(args.save_dir, 'masks')
 	stitch_save_dir = os.path.join(args.save_dir, 'stitches')
@@ -269,6 +289,7 @@ if __name__ == '__main__':
 	print('stitch_save_dir: ', stitch_save_dir)
 	
 	directories = {'source': args.source, 
+				   'gt_dir': args.gt_dir,
 				   'save_dir': args.save_dir,
 				   'patch_save_dir': patch_save_dir, 
 				   'mask_save_dir' : mask_save_dir, 

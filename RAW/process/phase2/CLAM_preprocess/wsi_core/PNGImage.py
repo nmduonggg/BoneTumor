@@ -19,8 +19,8 @@ from file_utils import load_pkl, save_pkl
 
 Image.MAX_IMAGE_PIXELS = 933120000
 
-class WholeSlideImage(object):
-    def __init__(self, path):
+class PNGImage(object):
+    def __init__(self, path, mask_dict):
 
         """
         Args:
@@ -29,218 +29,177 @@ class WholeSlideImage(object):
 
 #         self.name = ".".join(path.split("/")[-1].split('.')[:-1])
         self.name = os.path.splitext(os.path.basename(path))[0]
-        self.wsi = openslide.open_slide(path)
-        self.level_downsamples = self._assertLevelDownsamples()
-        self.level_dim = self.wsi.level_dimensions
-    
+        self.img = plt.imread(path)
+        
         self.contours_tissue = None
         self.contours_tumor = None
         self.hdf5_file = None
-
-    def getOpenSlide(self):
-        return self.wsi
-
-    def initXML(self, xml_path):
-        def _createContour(coord_list):
-            return np.array([[[int(float(coord.attributes['X'].value)), 
-                               int(float(coord.attributes['Y'].value))]] for coord in coord_list], dtype = 'int32')
-
-        xmldoc = minidom.parse(xml_path)
-        annotations = [anno.getElementsByTagName('Coordinate') for anno in xmldoc.getElementsByTagName('Annotation')]
-        self.contours_tumor  = [_createContour(coord_list) for coord_list in annotations]
-        self.contours_tumor = sorted(self.contours_tumor, key=cv2.contourArea, reverse=True)
-
-    def initTxt(self,annot_path):
-        def _create_contours_from_dict(annot):
-            all_cnts = []
-            for idx, annot_group in enumerate(annot):
-                contour_group = annot_group['coordinates']
-                if annot_group['type'] == 'Polygon':
-                    for idx, contour in enumerate(contour_group):
-                        contour = np.array(contour).astype(np.int32).reshape(-1,1,2)
-                        all_cnts.append(contour) 
-
-                else:
-                    for idx, sgmt_group in enumerate(contour_group):
-                        contour = []
-                        for sgmt in sgmt_group:
-                            contour.extend(sgmt)
-                        contour = np.array(contour).astype(np.int32).reshape(-1,1,2)    
-                        all_cnts.append(contour) 
-
-            return all_cnts
+        self.holes_tissue = mask_dict['holes']
+        self.contours_tissue = mask_dict['tissue']
+        self.scale = 3 if ('-x8' in path) else 2 # GT is downsampled by 4 prior
         
-        with open(annot_path, "r") as f:
-            annot = f.read()
-            annot = eval(annot)
-        self.contours_tumor  = _create_contours_from_dict(annot)
-        self.contours_tumor = sorted(self.contours_tumor, key=cv2.contourArea, reverse=True)
 
-    def initSegmentation(self, mask_file):
-        # load segmentation results from pickle file
-        import pickle
-        asset_dict = load_pkl(mask_file)
-        self.holes_tissue = asset_dict['holes']
-        self.contours_tissue = asset_dict['tissue']
+    # def initSegmentation(self, mask_file):
+    #     # load segmentation results from pickle file
+    #     import pickle
+    #     asset_dict = load_pkl(mask_file)
+    #     self.holes_tissue = asset_dict['holes']
+    #     self.contours_tissue = asset_dict['tissue']
 
-    def saveSegmentation(self, mask_file):
-        # save segmentation results using pickle
-        asset_dict = {'holes': self.holes_tissue, 'tissue': self.contours_tissue}
-        save_pkl(mask_file, asset_dict)
-    
-    def getSegmentation(self):
-        assess_dict = {'holes': self.holes_tissue, 'tissue': self.contours_tissue}
-        return assess_dict
+    # def saveSegmentation(self, mask_file):
+    #     # save segmentation results using pickle
+    #     asset_dict = {'holes': self.holes_tissue, 'tissue': self.contours_tissue}
+        # save_pkl(mask_file, asset_dict)
 
-    def segmentTissue(self, seg_level=0, sthresh=20, sthresh_up = 255, mthresh=7, close = 0, use_otsu=False, 
-                            filter_params={'a_t':100}, ref_patch_size=512, exclude_ids=[], keep_ids=[]):
-        """
-            Segment the tissue via HSV -> Median thresholding -> Binary threshold
-        """
+    # def segmentTissue(self, seg_level=0, sthresh=20, sthresh_up = 255, mthresh=7, close = 0, use_otsu=False, 
+    #                         filter_params={'a_t':100}, ref_patch_size=512, exclude_ids=[], keep_ids=[]):
+    #     """
+    #         Segment the tissue via HSV -> Median thresholding -> Binary threshold
+    #     """
         
-        def _filter_contours(contours, hierarchy, filter_params):
-            """
-                Filter contours by: area.
-            """
-            filtered = []
+    #     def _filter_contours(contours, hierarchy, filter_params):
+    #         """
+    #             Filter contours by: area.
+    #         """
+    #         filtered = []
 
-            # find indices of foreground contours (parent == -1)
-            hierarchy_1 = np.flatnonzero(hierarchy[:,1] == -1)
-            all_holes = []
+    #         # find indices of foreground contours (parent == -1)
+    #         hierarchy_1 = np.flatnonzero(hierarchy[:,1] == -1)
+    #         all_holes = []
             
-            # loop through foreground contour indices
-            for cont_idx in hierarchy_1:
-                # actual contour
-                cont = contours[cont_idx]
-                # indices of holes contained in this contour (children of parent contour)
-                holes = np.flatnonzero(hierarchy[:, 1] == cont_idx)
-                # take contour area (includes holes)
-                a = cv2.contourArea(cont)
-                # calculate the contour area of each hole
-                hole_areas = [cv2.contourArea(contours[hole_idx]) for hole_idx in holes]
-                # actual area of foreground contour region
-                a = a - np.array(hole_areas).sum()
-                if a == 0: continue
-                if tuple((filter_params['a_t'],)) < tuple((a,)): 
-                    filtered.append(cont_idx)
-                    all_holes.append(holes)
+    #         # loop through foreground contour indices
+    #         for cont_idx in hierarchy_1:
+    #             # actual contour
+    #             cont = contours[cont_idx]
+    #             # indices of holes contained in this contour (children of parent contour)
+    #             holes = np.flatnonzero(hierarchy[:, 1] == cont_idx)
+    #             # take contour area (includes holes)
+    #             a = cv2.contourArea(cont)
+    #             # calculate the contour area of each hole
+    #             hole_areas = [cv2.contourArea(contours[hole_idx]) for hole_idx in holes]
+    #             # actual area of foreground contour region
+    #             a = a - np.array(hole_areas).sum()
+    #             if a == 0: continue
+    #             if tuple((filter_params['a_t'],)) < tuple((a,)): 
+    #                 filtered.append(cont_idx)
+    #                 all_holes.append(holes)
 
 
-            foreground_contours = [contours[cont_idx] for cont_idx in filtered]
+    #         foreground_contours = [contours[cont_idx] for cont_idx in filtered]
             
-            hole_contours = []
+    #         hole_contours = []
 
-            for hole_ids in all_holes:
-                unfiltered_holes = [contours[idx] for idx in hole_ids ]
-                unfilered_holes = sorted(unfiltered_holes, key=cv2.contourArea, reverse=True)
-                # take max_n_holes largest holes by area
-                unfilered_holes = unfilered_holes[:filter_params['max_n_holes']]
-                filtered_holes = []
+    #         for hole_ids in all_holes:
+    #             unfiltered_holes = [contours[idx] for idx in hole_ids ]
+    #             unfilered_holes = sorted(unfiltered_holes, key=cv2.contourArea, reverse=True)
+    #             # take max_n_holes largest holes by area
+    #             unfilered_holes = unfilered_holes[:filter_params['max_n_holes']]
+    #             filtered_holes = []
                 
-                # filter these holes
-                for hole in unfilered_holes:
-                    if cv2.contourArea(hole) > filter_params['a_h']:
-                        filtered_holes.append(hole)
+    #             # filter these holes
+    #             for hole in unfilered_holes:
+    #                 if cv2.contourArea(hole) > filter_params['a_h']:
+    #                     filtered_holes.append(hole)
 
-                hole_contours.append(filtered_holes)
+    #             hole_contours.append(filtered_holes)
 
-            return foreground_contours, hole_contours
+    #         return foreground_contours, hole_contours
         
-        img = np.array(self.wsi.read_region((0,0), seg_level, self.level_dim[seg_level]))
-        img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)  # Convert to HSV space
-        img_med = cv2.medianBlur(img_hsv[:,:,1], mthresh)  # Apply median blurring
+    #     img = np.array(self.wsi.read_region((0,0), seg_level, self.level_dim[seg_level]))
+    #     img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)  # Convert to HSV space
+    #     img_med = cv2.medianBlur(img_hsv[:,:,1], mthresh)  # Apply median blurring
         
        
-        # Thresholding
-        if use_otsu:
-            _, img_otsu = cv2.threshold(img_med, 0, sthresh_up, cv2.THRESH_OTSU+cv2.THRESH_BINARY)
-        else:
-            _, img_otsu = cv2.threshold(img_med, sthresh, sthresh_up, cv2.THRESH_BINARY)
+    #     # Thresholding
+    #     if use_otsu:
+    #         _, img_otsu = cv2.threshold(img_med, 0, sthresh_up, cv2.THRESH_OTSU+cv2.THRESH_BINARY)
+    #     else:
+    #         _, img_otsu = cv2.threshold(img_med, sthresh, sthresh_up, cv2.THRESH_BINARY)
 
-        # Morphological closing
-        if close > 0:
-            kernel = np.ones((close, close), np.uint8)
-            img_otsu = cv2.morphologyEx(img_otsu, cv2.MORPH_CLOSE, kernel)                 
+    #     # Morphological closing
+    #     if close > 0:
+    #         kernel = np.ones((close, close), np.uint8)
+    #         img_otsu = cv2.morphologyEx(img_otsu, cv2.MORPH_CLOSE, kernel)                 
 
-        scale = self.level_downsamples[seg_level]
-        scaled_ref_patch_area = int(ref_patch_size**2 / (scale[0] * scale[1]))
-        filter_params = filter_params.copy()
-        filter_params['a_t'] = filter_params['a_t'] * scaled_ref_patch_area
-        filter_params['a_h'] = filter_params['a_h'] * scaled_ref_patch_area
+    #     scale = self.level_downsamples[seg_level]
+    #     scaled_ref_patch_area = int(ref_patch_size**2 / (scale[0] * scale[1]))
+    #     filter_params = filter_params.copy()
+    #     filter_params['a_t'] = filter_params['a_t'] * scaled_ref_patch_area
+    #     filter_params['a_h'] = filter_params['a_h'] * scaled_ref_patch_area
         
-        # Find and filter contours
-        contours, hierarchy = cv2.findContours(img_otsu, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE) # Find contours 
-        hierarchy = np.squeeze(hierarchy, axis=(0,))[:, 2:]
-        if filter_params: foreground_contours, hole_contours = _filter_contours(contours, hierarchy, filter_params)  # Necessary for filtering out artifacts
+    #     # Find and filter contours
+    #     contours, hierarchy = cv2.findContours(img_otsu, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE) # Find contours 
+    #     hierarchy = np.squeeze(hierarchy, axis=(0,))[:, 2:]
+    #     if filter_params: foreground_contours, hole_contours = _filter_contours(contours, hierarchy, filter_params)  # Necessary for filtering out artifacts
 
-        self.contours_tissue = self.scaleContourDim(foreground_contours, scale)
-        self.holes_tissue = self.scaleHolesDim(hole_contours, scale)
+    #     self.contours_tissue = self.scaleContourDim(foreground_contours, scale)
+    #     self.holes_tissue = self.scaleHolesDim(hole_contours, scale)
 
-        #exclude_ids = [0,7,9]
-        if len(keep_ids) > 0:
-            contour_ids = set(keep_ids) - set(exclude_ids)
-        else:
-            contour_ids = set(np.arange(len(self.contours_tissue))) - set(exclude_ids)
+    #     #exclude_ids = [0,7,9]
+    #     if len(keep_ids) > 0:
+    #         contour_ids = set(keep_ids) - set(exclude_ids)
+    #     else:
+    #         contour_ids = set(np.arange(len(self.contours_tissue))) - set(exclude_ids)
 
-        self.contours_tissue = [self.contours_tissue[i] for i in contour_ids]
-        self.holes_tissue = [self.holes_tissue[i] for i in contour_ids]
+    #     self.contours_tissue = [self.contours_tissue[i] for i in contour_ids]
+    #     self.holes_tissue = [self.holes_tissue[i] for i in contour_ids]
 
-    def visWSI(self, vis_level=0, color = (0,255,0), hole_color = (0,0,255), annot_color=(255,0,0), 
-                    line_thickness=250, max_size=None, top_left=None, bot_right=None, custom_downsample=1, view_slide_only=False,
-                    number_contours=False, seg_display=True, annot_display=True):
+    # def visWSI(self, vis_level=0, color = (0,255,0), hole_color = (0,0,255), annot_color=(255,0,0), 
+    #                 line_thickness=250, max_size=None, top_left=None, bot_right=None, custom_downsample=1, view_slide_only=False,
+    #                 number_contours=False, seg_display=True, annot_display=True):
         
-        downsample = self.level_downsamples[vis_level]
-        scale = [1/downsample[0], 1/downsample[1]]
+    #     downsample = self.level_downsamples[vis_level]
+    #     scale = [1/downsample[0], 1/downsample[1]]
         
-        if top_left is not None and bot_right is not None:
-            top_left = tuple(top_left)
-            bot_right = tuple(bot_right)
-            w, h = tuple((np.array(bot_right) * scale).astype(int) - (np.array(top_left) * scale).astype(int))
-            region_size = (w, h)
-        else:
-            top_left = (0,0)
-            region_size = self.level_dim[vis_level]
+    #     if top_left is not None and bot_right is not None:
+    #         top_left = tuple(top_left)
+    #         bot_right = tuple(bot_right)
+    #         w, h = tuple((np.array(bot_right) * scale).astype(int) - (np.array(top_left) * scale).astype(int))
+    #         region_size = (w, h)
+    #     else:
+    #         top_left = (0,0)
+    #         region_size = self.level_dim[vis_level]
 
-        img = np.array(self.wsi.read_region(top_left, vis_level, region_size).convert("RGB"))
+    #     img = np.array(self.wsi.read_region(top_left, vis_level, region_size).convert("RGB"))
         
-        if not view_slide_only:
-            offset = tuple(-(np.array(top_left) * scale).astype(int))
-            line_thickness = int(line_thickness * math.sqrt(scale[0] * scale[1]))
-            if self.contours_tissue is not None and seg_display:
-                if not number_contours:
-                    cv2.drawContours(img, self.scaleContourDim(self.contours_tissue, scale), 
-                                     -1, color, line_thickness, lineType=cv2.LINE_8, offset=offset)
+    #     if not view_slide_only:
+    #         offset = tuple(-(np.array(top_left) * scale).astype(int))
+    #         line_thickness = int(line_thickness * math.sqrt(scale[0] * scale[1]))
+    #         if self.contours_tissue is not None and seg_display:
+    #             if not number_contours:
+    #                 cv2.drawContours(img, self.scaleContourDim(self.contours_tissue, scale), 
+    #                                  -1, color, line_thickness, lineType=cv2.LINE_8, offset=offset)
 
-                else: # add numbering to each contour
-                    for idx, cont in enumerate(self.contours_tissue):
-                        contour = np.array(self.scaleContourDim(cont, scale))
-                        M = cv2.moments(contour)
-                        cX = int(M["m10"] / (M["m00"] + 1e-9))
-                        cY = int(M["m01"] / (M["m00"] + 1e-9))
-                        # draw the contour and put text next to center
-                        cv2.drawContours(img,  [contour], -1, color, line_thickness, lineType=cv2.LINE_8, offset=offset)
-                        cv2.putText(img, "{}".format(idx), (cX, cY),
-                                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 10)
+    #             else: # add numbering to each contour
+    #                 for idx, cont in enumerate(self.contours_tissue):
+    #                     contour = np.array(self.scaleContourDim(cont, scale))
+    #                     M = cv2.moments(contour)
+    #                     cX = int(M["m10"] / (M["m00"] + 1e-9))
+    #                     cY = int(M["m01"] / (M["m00"] + 1e-9))
+    #                     # draw the contour and put text next to center
+    #                     cv2.drawContours(img,  [contour], -1, color, line_thickness, lineType=cv2.LINE_8, offset=offset)
+    #                     cv2.putText(img, "{}".format(idx), (cX, cY),
+    #                             cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 10)
 
-                for holes in self.holes_tissue:
-                    cv2.drawContours(img, self.scaleContourDim(holes, scale), 
-                                     -1, hole_color, line_thickness, lineType=cv2.LINE_8)
+    #             for holes in self.holes_tissue:
+    #                 cv2.drawContours(img, self.scaleContourDim(holes, scale), 
+    #                                  -1, hole_color, line_thickness, lineType=cv2.LINE_8)
             
-            if self.contours_tumor is not None and annot_display:
-                cv2.drawContours(img, self.scaleContourDim(self.contours_tumor, scale), 
-                                 -1, annot_color, line_thickness, lineType=cv2.LINE_8, offset=offset)
+    #         if self.contours_tumor is not None and annot_display:
+    #             cv2.drawContours(img, self.scaleContourDim(self.contours_tumor, scale), 
+    #                              -1, annot_color, line_thickness, lineType=cv2.LINE_8, offset=offset)
         
-        img = Image.fromarray(img)
+    #     img = Image.fromarray(img)
     
-        w, h = img.size
-        if custom_downsample > 1:
-            img = img.resize((int(w/custom_downsample), int(h/custom_downsample)))
+    #     w, h = img.size
+    #     if custom_downsample > 1:
+    #         img = img.resize((int(w/custom_downsample), int(h/custom_downsample)))
 
-        if max_size is not None and (w > max_size or h > max_size):
-            resizeFactor = max_size/w if w > h else max_size/h
-            img = img.resize((int(w*resizeFactor), int(h*resizeFactor)))
+    #     if max_size is not None and (w > max_size or h > max_size):
+    #         resizeFactor = max_size/w if w > h else max_size/h
+    #         img = img.resize((int(w*resizeFactor), int(h*resizeFactor)))
        
-        return img
+    #     return img
 
 
     def createPatches_bag_hdf5(self, save_path, patch_level=0, patch_size=256, step_size=256, save_coord=True, **kwargs):
@@ -349,7 +308,7 @@ class WholeSlideImage(object):
     def isInContours(cont_check_fn, pt, holes=None, patch_size=256):
         if cont_check_fn(pt):
             if holes is not None:
-                return not WholeSlideImage.isInHoles(holes, pt, patch_size)
+                return not PNGImage.isInHoles(holes, pt, patch_size)
             else:
                 return 1
         return 0
@@ -399,7 +358,7 @@ class WholeSlideImage(object):
         contour_fn='four_pt', use_padding=True, top_left=None, bot_right=None):
         start_x, start_y, w, h = cv2.boundingRect(cont) if cont is not None else (0, 0, self.level_dim[patch_level][0], self.level_dim[patch_level][1])
 
-        patch_downsample = (int(self.level_downsamples[patch_level][0]), int(self.level_downsamples[patch_level][1]))
+        patch_downsample = (int(self.scale), int(self.scale))
         ref_patch_size = (patch_size*patch_downsample[0], patch_size*patch_downsample[1])
         
         img_w, img_h = self.level_dim[0]
