@@ -1,0 +1,75 @@
+name: ResNet_baseline
+gpu_ids: [1]
+job_dir: journal_040225_split_by_cases
+token: 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
+
+network_G:
+  which_model_G: resnet_baseline
+  in_nc: 3
+  out_nc: 7
+
+datasets:
+  train:
+    type: train
+    name: Osteosarcoma
+    mode: journal_classification
+    image_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_PATCHES
+    label_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_LABELS
+    cases: [1, 2, 4, 5, 7, 9]
+    height: 1024
+    width: 1024
+    batch_size: 128
+    balance: False
+    augment: True
+    n_workers: 32
+
+  valid:
+    type: valid
+    name: Osteosarcoma
+    mode: journal_classification
+    image_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_PATCHES
+    label_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_LABELS
+    cases: [10]
+    height: 1024
+    width: 1024
+    batch_size: 128
+    augment: false
+    n_workers: 32
+
+  test:
+    type: test
+    name: Osteosarcoma
+    mode: journal_classification
+    image_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_PATCHES
+    label_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_LABELS
+    cases: [6, 8]
+    height: 1024
+    width: 1024
+    batch_size: 128
+    balance: False
+    augment: False
+    n_workers: 8
+
+path:
+  pretrain_model: ~
+
+train:
+  lr_G: !!float 5e-4
+  beta1: 0.9
+  beta2: 0.99
+  epochs: 20
+  eta_min: !!float 1e-7
+
+  manual_seed: 2000
+  val_freq: 1
+  val_step_freq: 1000
+
+  mode: journal_classification
+
+logger:
+  print_freq: 20000
+  save_checkpoint_freq: !!float 20000
+
+is_train: true
+is_test: false
+wandb: true

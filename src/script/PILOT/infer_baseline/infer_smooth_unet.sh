@@ -1,0 +1,9 @@
+python infer_smooth_segment.py \
+    -opt options/UNet_baseline.yml \
+    --weight_path '/home/user01/aiotlab/nmduong/BoneTumor/src/exp_segment/unet/_best.pt' \
+    --labels_dir '/home/user01/aiotlab/nmduong/BoneTumor/RAW_DATA/labels' \
+    --images_dir '/home/user01/aiotlab/nmduong/BoneTumor/RAW_DATA/images' \
+    --outdir './infer/smooth_unet/' \
+    --crop_sz 2048 \
+    --step 1536 \
+    --small_sz 1792 \
