@@ -19,4 +19,8 @@ src/journal_040225_split_by_cases
 BBDM2/results
 RAW_DATA/*
 log_slurm
+<<<<<<< HEAD
 exp_*
+=======
+exp_*
+>>>>>>> d0a85f5 (yam: init)
