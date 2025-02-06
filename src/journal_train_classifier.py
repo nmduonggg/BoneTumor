@@ -1,9 +1,5 @@
 import os
-import datetime
-import pickle
-from collections import OrderedDict
 import matplotlib.pyplot as plt
-from scipy import stats
 import torch
 import torch.nn as nn
 import numpy as np
@@ -36,19 +32,6 @@ device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
 
 # HF Login to get pretrained weight
 login(opt['token'])
-
-for phase, dataset_opt in opt['datasets'].items():
-    if phase=='train': 
-        train_set = create_dataset(dataset_opt)
-        train_loader = create_dataloader(train_set, dataset_opt, opt, None)
-    elif phase=='valid': 
-        valid_set = create_dataset(dataset_opt)
-        valid_loader = create_dataloader(valid_set, dataset_opt, opt, None)
-    elif phase=='test': 
-        test_set = create_dataset(dataset_opt)
-        test_loader = create_dataloader(test_set, dataset_opt, opt, None)
-    else:
-        raise NotImplementedError('Phase [{:s}] is not recognized.'.format(phase))
     
 working_dir = os.path.join('.', opt['job_dir'], opt['name'])
 os.makedirs(working_dir, exist_ok=True)
@@ -92,6 +75,17 @@ for name, params in model.named_parameters():
 def train():
     
     model.to(device)
+    for phase, dataset_opt in opt['datasets'].items():
+        if phase=='train': 
+            train_set = create_dataset(dataset_opt)
+            train_loader = create_dataloader(train_set, dataset_opt, opt, None)
+        elif phase=='valid': 
+            valid_set = create_dataset(dataset_opt)
+            valid_loader = create_dataloader(valid_set, dataset_opt, opt, None)
+        elif phase=='test': 
+            pass
+        else:
+            raise NotImplementedError('Phase [{:s}] is not recognized.'.format(phase))
     
     #### Initialization ####
     loss_tracker = utils.MetricTracker('Train Loss')
@@ -106,7 +100,7 @@ def train():
         # Validation #
         if (epoch % train_opt['val_freq']==0):    
             print("Evaluating...")
-            eval_loss, eval_acc, eval_metrics = evaluate()
+            eval_loss, eval_acc, eval_metrics = evaluate(valid_loader)
             
             print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
             for k, v in eval_metrics.items():
@@ -151,7 +145,7 @@ def train():
             loss_tracker.update(loss.detach().cpu().item(), batch_size)
             if train_opt['mode']=='segment':
                 iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
-            elif train_opt['mode']=='classification':
+            elif 'classification' in train_opt['mode']:
                 iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
                 train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_)
                 train_metrics['prec'] = train_metrics.get('prec', 0) + np.array(prec_)
@@ -169,7 +163,7 @@ def train():
             # Validation #
             if (global_step % train_opt['val_step_freq']==0):    
                 print("Evaluating...")
-                eval_loss, eval_acc, eval_metrics = evaluate()
+                eval_loss, eval_acc, eval_metrics = evaluate(valid_loader)
                 
                 print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
                 for k, v in eval_metrics.items():
@@ -198,12 +192,11 @@ def train():
         loss_tracker.reset()
         acc_tracker.reset()
         
-        torch.save(model.state_dict(), os.path.join(working_dir, '_last.pt'))
+        # torch.save(model.state_dict(), os.path.join(working_dir, '_last.pt'))
             
     return
 
-def evaluate():
-    
+def evaluate(valid_loader):
     loss_tracker = utils.MetricTracker('Valid Loss')
     acc_tracker = utils.MetricTracker('Valid Accuracy')
     model.to(device)
@@ -228,7 +221,7 @@ def evaluate():
         
         if train_opt['mode']=='segment':
             iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
-        elif train_opt['mode']=='classification':
+        elif 'classification' in train_opt['mode']:
             iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
         else: assert(0), train_opt['mode']
         
@@ -238,8 +231,6 @@ def evaluate():
         metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
         metrics['loss'] = metrics.get('loss', 0) + np.array(loss.detach().cpu().item()) 
         acc_tracker.update(acc_, batch_size)
-    
-    model.train()
     
     return loss_tracker, acc_tracker, metrics
 
@@ -258,15 +249,15 @@ def visualize(im, gt, pred, im_id):
     pred = pred.detach().cpu().squeeze(0).numpy()   # CxHxW
     
     if pred != gt:
-        
-        # plt.imsave(os.path.join(outdir, f"{im_id}_pred"), output.astype(np.uint8))
-        # plt.imsave(os.path.join(outdir, f"{im_id}_gt"), outgt.astype(np.uint8))
         plt.imsave(os.path.join(outdir, f"tpatch_{im_id}.png"), np_im)
         print(gt)
             
     # return output
 
 def test():
+    dataset_opt = opt['datasets']['test']
+    test_set = create_dataset(dataset_opt)
+    test_loader = create_dataloader(test_set, dataset_opt, opt, None)
     
     loss_tracker = utils.MetricTracker('Test Loss')
     acc_tracker = utils.MetricTracker('Test Accuracy')

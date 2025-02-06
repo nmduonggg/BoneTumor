@@ -2,22 +2,24 @@
 import torch
 import torch.utils.data
 
-def create_dataloader(dataset, dataset_opt, opt=None, sampler=None, collate_fn=None):
+def create_dataloader(dataset, dataset_opt, opt=None, shuffle=False, sampler=None, collate_fn=None):
     phase = dataset_opt['phase']
     batch_size = dataset_opt['batch_size']
-    shuffle = True
+    num_workers = dataset_opt['n_workers'] * len(opt['gpu_ids'])
     
     if phase == 'train':
-        num_workers = dataset_opt['n_workers'] * len(opt['gpu_ids'])
         if dataset_opt['balance']:
             weights = make_weights_for_balanced_classes(dataset, dataset.n_classes)
             weights = torch.DoubleTensor(weights)
             sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))  
             shuffle=False 
         
-        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, sampler=sampler, collate_fn=collate_fn, drop_last=False, pin_memory=True)
+        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, 
+                                           sampler=sampler, collate_fn=collate_fn, prefetch_factor=2,
+                                           persistent_workers=True, drop_last=False, pin_memory=True)
     else:
-        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1, pin_memory=True, collate_fn=collate_fn)
+        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers,
+                                           pin_memory=True, prefetch_factor=2, persistent_workers=True, collate_fn=collate_fn)
 
 
 def create_dataset(dataset_opt):
