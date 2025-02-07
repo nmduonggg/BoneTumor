@@ -1,10 +1,10 @@
-name: UNI_lora_cls
+name: unet
 gpu_ids: [2]
 job_dir: exp/journal_040225_split_by_cases
 token: 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
 
 network_G:
-  which_model_G: uni_lora_cls
+  which_model_G: unet_baseline
   in_nc: 3
   out_nc: 7
 
@@ -12,7 +12,7 @@ datasets:
   train:
     type: train
     name: Osteosarcoma
-    mode: journal_classification
+    mode: journal_segmentation
     image_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_PATCHES
     label_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_LABELS
     cases: [1, 2, 4, 5, 7, 9]
@@ -21,13 +21,12 @@ datasets:
     batch_size: 128
     balance: False
     augment: True
-    n_workers: 10
-    random: true
+    n_workers: 32
 
   valid:
     type: valid
     name: Osteosarcoma
-    mode: journal_classification
+    mode: journal_segmentation
     image_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_PATCHES
     label_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_LABELS
     cases: [10]
@@ -35,23 +34,21 @@ datasets:
     width: 1024
     batch_size: 128
     augment: false
-    n_workers: 10
-    random: false
+    n_workers: 32
 
   test:
     type: test
     name: Osteosarcoma
-    mode: journal_classification
+    mode: journal_segmentation
     image_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_PATCHES
     label_dir: /workdir/radish/manhduong/Osteosarcoma-Journal-31-01-25/1024/CROPPED_LABELS
     cases: [6, 8]
     height: 1024
     width: 1024
-    batch_size: 768
+    batch_size: 128
     balance: False
     augment: False
-    n_workers: 10
-    random: false
+    n_workers: 8
 
 path:
   pretrain_model: ~
@@ -67,7 +64,7 @@ train:
   val_freq: 1
   val_step_freq: 1000
 
-  mode: journal_classification
+  mode: journal_segmentation
 
 logger:
   print_freq: 20000

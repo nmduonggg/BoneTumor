@@ -143,7 +143,7 @@ def train():
             optimizer.step()
             
             loss_tracker.update(loss.detach().cpu().item(), batch_size)
-            if train_opt['mode']=='segment':
+            if 'segmentation' in train_opt['mode']:
                 iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
             elif 'classification' in train_opt['mode']:
                 iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
@@ -219,7 +219,7 @@ def evaluate(valid_loader):
         loss = loss_func(pred, gt)
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
         
-        if train_opt['mode']=='segment':
+        if 'segmentation' in train_opt['mode']:
             iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
         elif 'classification' in train_opt['mode']:
             iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
@@ -280,7 +280,7 @@ def test():
         loss = loss_func(pred, gt)
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
         
-        if train_opt['mode']=='segment':
+        if  'segmentation' in train_opt['mode']:
             iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
         elif train_opt['mode']=='classification':
             iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)

@@ -26,7 +26,7 @@ def find_free_port():
 
 def setup_distributed(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '8080'  # Use dynamically assigned free port
+    os.environ['MASTER_PORT'] = '8888'  # Use dynamically assigned free port
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
     
 def cleanup_distributed():

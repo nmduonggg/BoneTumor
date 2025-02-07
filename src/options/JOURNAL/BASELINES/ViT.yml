@@ -1,6 +1,6 @@
 name: ViT_baseline
 gpu_ids: [2]
-job_dir: journal_040225_split_by_cases
+job_dir: exp/journal_040225_split_by_cases
 token: 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
 
 network_G:
