@@ -41,8 +41,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '%d' % opt['gpu_ids'][0]
 device = torch.device('cuda:0' if opt['gpu_ids'] is not None else 'cpu')
 
 # HF Login to get pretrained weight
-# login(opt['token'])
-    
+login(opt['token'])
 model = create_model(opt)
 
 # fix and load weight
