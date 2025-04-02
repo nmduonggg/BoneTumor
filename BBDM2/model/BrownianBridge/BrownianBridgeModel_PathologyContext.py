@@ -120,13 +120,15 @@ class BrownianBridgeModel_Pathology(nn.Module):
         else:
             raise NotImplementedError()
 
-        x0_recon = self.predict_x0_from_objective(x_t, y, t, objective_recon)
+        x0_recon = self.predict_x0_from_objective(x_t, y, t, objective_recon)   # BxCxHxW
+        ce_loss = F.cross_entropy(x0_recon, x0, reduction='mean')
+        
         log_dict = {
-            "loss": recloss.detach().cpu(),
+            "loss": (recloss + ce_loss).detach().cpu(),
             "x0_recon": x0_recon.detach().cpu(),
             "x0": x0.detach().cpu()
         }
-        return recloss, log_dict
+        return recloss + ce_loss, log_dict
 
     def q_sample(self, x0, y, t, noise=None):
         noise = default(noise, lambda: torch.randn_like(x0))

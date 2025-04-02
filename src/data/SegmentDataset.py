@@ -47,9 +47,17 @@ class SegmentDataset(Dataset):
         self.opt = opt
         self.n_classes = 7
         
-        print("Number of classes: ", self.n_classes)
-        with open(opt['label_map'], 'r') as f:
+        self.root_folder = opt['root']
+        
+        with open(os.path.join(opt['root'], 'dataset_split.json'), 'r') as f:
             self.indices = json.load(f)[opt['type']]
+            
+        with open(os.path.join(opt['root'], 'metadata_reindex.json'), 'r') as f:
+            self.data_list = json.load(f)
+        
+        print("Number of classes: ", self.n_classes)
+        # with open(opt['label_map'], 'r') as f:
+        #     self.indices = json.load(f)[opt['type']]
             
         self.target_colors = [
             [255, 255, 255],
@@ -63,8 +71,8 @@ class SegmentDataset(Dataset):
         
         self.transform = transforms.Compose(
             [
-                # transforms.Resize(224),
                 transforms.ToTensor(),
+                transforms.Resize(256),
                 transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
             ]
         )
@@ -74,7 +82,7 @@ class SegmentDataset(Dataset):
             A.VerticalFlip(p=0.5),
             A.RandomRotate90(p=0.5),
             A.Transpose(p=0.5),
-            A.RandomBrightnessContrast(p=0.8),
+            A.RandomBrightnessContrast(p=0.1),
             A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),]
         )
         
@@ -83,28 +91,19 @@ class SegmentDataset(Dataset):
     
     def __getitem__(self, index):
         
-        item_idx = self.indices[index]
-        # x = cv2.imread(os.path.join(self.image_dir, f"patch_{item_idx}.png"))
-        # x = cv2.cvtColor(x, cv2.COLOR_BGR2RGB)
-        x = np.array(
-            Image.open(os.path.join(self.image_dir, f"patch_{item_idx}.png")).convert("RGB"))
+        # item_idx = self.indices[index]
+        item_infor = self.data_list[self.indices[index]]
+        img_path = os.path.join(self.image_dir, f"{item_infor['crop_index']}.png")
         
-        y = cv2.imread(os.path.join(self.label_dir, f"gt_{item_idx}.png"))[:, :, :3]
+        x = Image.open(os.path.join(img_path)).convert("RGB")
+        
+        y = cv2.imread(os.path.join(self.label_dir, f"{item_infor['crop_index']}.png"))[:, :, :3]
         y = cv2.cvtColor(y, cv2.COLOR_BGR2RGB)
-        
-        if self.opt['augment']:
-            augmented = self.augmentation(image=x, mask=y)
-            x = augmented['image']
-            y = augmented['mask']
-            
-            # p = np.random.random()
-            # if p > 0.8:
-            #     x = np.ones_like(x) * 255
-            #     y = np.ones_like(y) * 255
-        
+        y = cv2.resize(y, (256, 256), interpolation=cv2.INTER_NEAREST)
         y = apply_threshold_mapping(y, self.target_colors, self.tolerance)
         
         x = self.transform(x).float()
-        y = torch.tensor(y).long() 
+        # print(x.shape)
+        y = torch.tensor(y).long()
         
         return x, y

@@ -130,16 +130,18 @@ def huvos_classify(huvos_ratio):
         
 
 if __name__ == '__main__':
-    label_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-/labels'
-    image_folder = '/mnt/disk4/nmduong/Vin-Uni-Bone-/images'
-    outdir = "/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS"
+    label_folder = '/home/user01/aiotlab/nmduong/BoneTumor/RAW_DATA/labels'
+    image_folder = '//home/user01/aiotlab/nmduong/BoneTumor/RAW_DATA/images'
+    outdir = "/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS"
     os.makedirs(outdir, exist_ok=True)
     done_cases = []
+    # cases = ["Case_6", "Case_8"]
     
     metadatas = {}
     
     for case in os.listdir(label_folder):
         if case in done_cases: continue
+        # if case not in cases: continue
         print(f"Processing: {case}...")
         
         case_dict = {}

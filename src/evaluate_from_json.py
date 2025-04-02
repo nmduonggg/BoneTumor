@@ -61,9 +61,10 @@ def write2excel(df, exl_path):
 
 
 if __name__=='__main__':
-    gt_path = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS/gt_dict.json'
-    pred_path = '/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/src/infer/smooth_vit/pred_dict.json'
-    xlsx_path = './smooth_vit.xlsx'
+    gt_path = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/REAL_STATISTICS/gt_dict.json'
+    # pred_path = '/home/user01/aiotlab/nmduong/BoneTumor/src/infer/smooth_uni_last/pred_dict.json'
+    pred_path = pred_folder = '/home/user01/aiotlab/nmduong/BoneTumor/src/infer/smooth_stacked_discrete_ensemble_ce//pred_dict.json'
+    xlsx_path = './smooth_uni_ft68_discrete_ce.xlsx'
     
     cases = ["Case_6", "Case_8"]
     # Create an empty list to store the rows for the DataFrame

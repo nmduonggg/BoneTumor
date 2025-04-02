@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append('/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2')
+sys.path.append('/home/user01/aiotlab/nmduong/BoneTumor/BBDM2')
 
 import torch  
 import torch.nn as nn  
@@ -101,8 +101,9 @@ class DiscreteStackedDiffusionModel(nn.Module):
         
         out_ori = F.interpolate(out_ori.permute(0,3,1,2), 
                                 (self.phase2_size, self.phase2_size))   # BCHW
-        out_indices = torch.argmax(out_ori, dim=1, keepdim=True)    # Bx7xHxW
-        out_onehot = self.onehot_encoding(out_indices)
+        # out_indices = torch.argmax(out_ori, dim=1, keepdim=True)    # Bx7xHxW
+        # out_onehot = self.onehot_encoding(out_indices)
+        out_onehot = out_ori
         
         x = data_utils.denormalize_tensor(x)
         
@@ -110,17 +111,29 @@ class DiscreteStackedDiffusionModel(nn.Module):
         x_cond = out_onehot.to(x.device)
         x_cont = F.interpolate(x, (self.phase2_size, self.phase2_size))
         
+        # print(x_cond.shape, x_cont.shape)
+        
         # x_cond = self._to_normal(x_cond)
         x_cont = self._to_normal(x_cont)
         
         x_cont = torch.cat([x_cond, x_cont], dim=1)
         
-        out = self.phase2_refiner.sample_infer(x_cond, x_cont, clip_denoised=self.option['bbdm']['clip_denoised'])
+        n_samples = 1
+        x_conts = torch.cat([x_cont for _ in range(n_samples)], dim=0).to(x_cont.device)
+        x_conds = torch.cat([x_cond for _ in range(n_samples)], dim=0).to(x_cond.device)
+        
+        outs = self.phase2_refiner.sample_infer(x_conds, x_conts, clip_denoised=self.option['bbdm']['clip_denoised'])
+        
+        # outs = torch.cat([out_ori, outs], dim=0)
+        out = torch.mean(outs, dim=0, keepdim=True)
+        # out = out + out_ori*0.9
+        
+        out = out.permute(0, 2, 3, 1) # BCHW -> BHWC
         # out = self._rm_normal(out)
         
-        if infer:
-            out = out
-            out = idx2label(out)
+        # if infer:
+        #     out = out
+        #     out = idx2label(out)
         
         return out
     

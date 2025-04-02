@@ -12,11 +12,11 @@ class UNI_lora_cls(nn.Module):
     def __init__(self, out_nc):
         super(UNI_lora_cls, self).__init__()
         
-        # model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
-        #                           pretrained=True, init_values=1e-5, dynamic_img_size=True)
-        model = timm.create_model(
-            "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
-        )
+        model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
+                                  pretrained=True, init_values=1e-5, dynamic_img_size=True)
+        # model = timm.create_model(
+        #     "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
+        # )
         
         self.tile_encoder = model
         
@@ -24,6 +24,7 @@ class UNI_lora_cls(nn.Module):
             nn.Linear(1024, 512), nn.ReLU(),
             nn.Linear(512, out_nc)
         )
+        
         self.apply_lora_to_vit(16, 32)
 
     def encode(self, x):

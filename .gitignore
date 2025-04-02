@@ -14,5 +14,13 @@ wandb
 src/exp_cls_256_cls
 src/exp_cls_256_cls_rm_confused_case
 src/exp_cls_256_cls_rm_confused_case_with9
+src/journal_040225_split_by_cases
 **/*.png
 BBDM2/results
+RAW_DATA/*
+log_slurm
+<<<<<<< HEAD
+exp_*
+=======
+exp_*
+>>>>>>> d0a85f5 (yam: init)

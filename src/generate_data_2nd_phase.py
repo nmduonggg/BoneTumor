@@ -1,5 +1,8 @@
 import os
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = str(pow(2,40))
+# import sys
+# sys.setrecursionlimit(1500)
+
 
 import cv2
 import json
@@ -11,11 +14,11 @@ import argparse
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from torchvision import transforms
+import torchvision.transforms as transforms
 import options.options as option
 from model import create_model
 import utils.utils as utils
-import data.utils as data_utils
+# import data.utils as data_utils
 
 from huggingface_hub import login
 
@@ -145,7 +148,7 @@ def infer(image_filepath, label_filepath, size=256):
         im_patch = bg.astype(np.uint8)
         
         im = transform(im_patch).float().unsqueeze(0)   # Bx3xHW
-        b, _, h, w = im.shape
+        # b, _, h, w = im.shape
         
         im = im.to(device)
         with torch.no_grad():
@@ -153,10 +156,11 @@ def infer(image_filepath, label_filepath, size=256):
         
         # pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
         # pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
-        pred_im = torch.ones((h, w, 1)) * pred.cpu().reshape(1, 1, -1)    # -> HxWxC
+        pred_im = torch.ones((size, size, 1)) * pred.cpu().reshape(1, 1, -1)    # -> HxWxC
         preds_list.append(pred_im.numpy())
+    # print(num_h, num_w, h, w)
     
-    pred = utils.combine(preds_list, num_h, num_w, h, w, crop_sz, step, len(color_map))
+    pred = utils.combine(preds_list, num_h, num_w, h, w, size, step, len(color_map))
     # pred = cv2.resize(pred, (size, size), interpolation=cv2.INTER_NEAREST).astype('uint8')
     # pred = cv2.resize(pred, (size, size))
     

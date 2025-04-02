@@ -29,6 +29,9 @@ parser.add_argument('--labels_dir', type=str, required=True)
 parser.add_argument('--images_dir', type=str, required=True)
 parser.add_argument('--weight_path', type=str, required=True)
 parser.add_argument('--outdir', type=str, required=True)
+parser.add_argument('--crop_sz', type=int, default=256)
+parser.add_argument('--step', type=int, default=240)
+parser.add_argument('--small_sz', type=int, default=16)
 args = parser.parse_args()
 opt = option.parse(args.opt, root=args.root)
 
@@ -57,10 +60,10 @@ else:
     print("No pretrained weight found")
     
 # Init
-crop_sz = 256
-step = 240
-infer_size = 256
-small_h = small_w = 16
+crop_sz = args.crop_sz
+step = args.step
+infer_size = crop_sz
+small_h = small_w = args.small_sz
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
 color_map = [
@@ -319,9 +322,9 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
 
 
 if __name__=='__main__':
-    done_cases = [f"Case_{n}" for n in [1, 3, 4, 8, 9, 10]]
-    # cases = [f"Case_{n}" for n in range(6)]
-    cases = ["Case_6"]
+    done_cases = [f"Case_{n}" for n in [1, 3, 4, 9, 10]]
+    # cases = [f"Case_{n}" for n in [6, 8]]
+    cases = ["Case_6", "Case_8"]
     metadatas = {}
     
     outdir = args.outdir

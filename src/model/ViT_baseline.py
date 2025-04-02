@@ -15,7 +15,7 @@ class ViT_baseline(nn.Module):
         # model = timm.create_model("hf-hub:MahmoodLab/uni", img_size=256,
         #                           pretrained=True, init_values=1e-5, dynamic_img_size=True)
         model = timm.create_model(
-            "vit_large_patch16_224", img_size=256, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
+            "vit_large_patch16_224", img_size=128, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
         )
         
         self.tile_encoder = model

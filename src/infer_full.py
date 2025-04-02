@@ -59,8 +59,8 @@ else:
     
 # Init
 crop_sz = 256*8
-step = 256*8
-small_h = small_w = 256
+step = 256*6
+small_h = small_w = 256*7
 ratio = int(crop_sz / small_h)
 small_step = step // ratio
 color_map = [
@@ -128,6 +128,13 @@ def read_percent_from_color(image):
 
     return masks
 
+def get_nonwhite_mask(image):
+    grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    _, thresholded = cv2.threshold(grayscale, 250, 255, cv2.THRESH_BINARY)
+    mask = (thresholded != 255).astype(int)
+    
+    return mask
+
 def open_img(image_path):
     img = cv2.imread(image_path)[:, :, :3]
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -178,19 +185,12 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
     global color_map
     infer_name = os.path.basename(infer_path)
     
-    fx = 8e-2
-    fy = 8e-2
-    
-    label = open_img(label_path)
-    label_mask = np.any(np.abs(label - np.array([255, 255, 255])) > 5, axis=-1).astype(int)
-    label_mask = cv2.resize(label_mask, None, fx=fx, fy=fy, interpolation=cv2.INTER_NEAREST)
-    
-    del label
-    print("Get Label Mask Done")
+    fx = 5e-2
+    fy = 5e-2
     
     model.to(device)
     model.eval()
-    
+    print(infer_path)
     img, preprocess_elems = prepare(infer_path)
     patches_list, num_h, num_w, h, w = preprocess_elems
     kwargs = {
@@ -248,6 +248,8 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
             pred = model(im)[0].cpu().numpy()
             pred = cv2.resize(pred, (small_h, small_w), interpolation=cv2.INTER_NEAREST)
         preds_list.append(pred)
+        
+    del patches_list
     
     kwargs['sr_list'] = preds_list
     kwargs['channel'] = 7
@@ -267,8 +269,14 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
         output[mask] = color
     
     prediction = cv2.resize(output, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-    label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-    label_mask = np.expand_dims(label_mask, axis=-1)
+    
+    label = cv2.resize(open_img(label_path)[:h, :w, :], (img.shape[1], img.shape[0]), cv2.INTER_NEAREST)
+    print(label.mean())
+    plt.imsave(os.path.join(outdir, f"{infer_name.split('.')[0]}_label.png"), label) 
+    label_mask = np.expand_dims(get_nonwhite_mask(label), axis=-1)
+    # label_mask = cv2.resize(label_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+    
+    # label_mask = np.expand_dims(label_mask, axis=-1)
     
     
     # cut to align img and prediction
@@ -319,7 +327,7 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
     huvos_case = []
     label_names = [n for n in os.listdir(label_folder) if ('.jpg' in n or '.png' in n)]
     for label_name in label_names:
-        if 'S10' not in label_name: continue
+        # if 'S10' not in label_name: continue
         if "x8" in label_name:
             image_name = label_name.split("-x8")[0] + '.png'
             upsample = True
@@ -360,7 +368,7 @@ if __name__=='__main__':
     
     done_cases = [f"Case_{n}" for n in []]
     cases = [f"Case_{n}" for n in range(1, 11)]
-    # cases = ["Case_6"]
+    cases = ["Case_6", "Case_8"]
     
     metadatas = {}
     outdir = args.outdir    

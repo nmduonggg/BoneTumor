@@ -37,7 +37,7 @@ def write_to_json(train_indices, valid_indices, test_indices,
 
 if __name__=='__main__':
     
-    class_dict_path = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/class_dict_256_retrain_for_phase2_with9.json'   # update continuously
+    class_dict_path = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/class_dict_256_case68.json'   # update continuously
     # case_dict_path = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/case_dict_256.json'
     # old_class_dict_path = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/class_dict_256_bkup.json'
     # dataset_dict_path = '/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/dataset_split_256_by_class_bkup.json'
@@ -49,7 +49,7 @@ if __name__=='__main__':
     valid_indices = []
     test_indices = []
     
-    train_ratio = 0.8
+    train_ratio = 0.9
     valid_ratio = 0.1
         
     for case in case_dict.keys():
@@ -63,11 +63,11 @@ if __name__=='__main__':
         valid_indices += valid_set
         test_indices += test_set
         
-        # oversampling: 5
-        if case=='5':
-            train_indices += train_set * 2
+        # # oversampling: 5
+        # if case=='5':
+        #     train_indices += train_set * 2
             
         print(case, len(train_set), len(valid_set), len(test_set))
         
     write_to_json(train_indices, valid_indices, test_indices,
-                  path = "/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/RAW/REAL_WSIs/dataset_split_256_by_class_retrain_with9.json")
+                  path = "/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/dataset_split_256_case68.json")

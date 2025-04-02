@@ -226,3 +226,23 @@ class BrownianBridgeModel_Pathology(nn.Module):
     @torch.no_grad()
     def sample(self, y, context=None, clip_denoised=True, sample_mid_step=False):
         return self.p_sample_loop(y, context, clip_denoised, sample_mid_step)
+    
+    @torch.no_grad()
+    def sample_infer(self, y, context=None, clip_denoised=True, sample_mid_step=False):
+        if self.condition_key == "nocond":
+            context = None
+        else:
+            context = y if context is None else context
+
+        if sample_mid_step:
+            imgs, one_step_imgs = [y], []
+            for i in range(len(self.steps)):
+                img, x0_recon = self.p_sample(x_t=imgs[-1], y=y, context=context, i=i, clip_denoised=clip_denoised)
+                imgs.append(img)
+                one_step_imgs.append(x0_recon)
+            return imgs, one_step_imgs
+        else:
+            img = y
+            for i in range(len(self.steps)):
+                img, _ = self.p_sample(x_t=img, y=y, context=context, i=i, clip_denoised=clip_denoised)
+            return img

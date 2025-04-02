@@ -18,8 +18,9 @@ def check_blank(img_np):
 
 if __name__ == '__main__':
 
-    target_folder = "/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/RAW_DATA/images/Case11 H13777-24"
-    outdir = "/mnt/disk1/nmduong/Vin-Uni-Bone-Tumor/RAW_DATA/images/Case_11_2"
+
+    target_folder = "/workdir/radish/manhduong/Dataset-Osteosarcoma/Case2"
+    outdir = "/workdir/radish/manhduong/Dataset-Osteosarcoma/PNG_RAW_DATA/images/Case_2"
     os.makedirs(outdir, exist_ok=True)
     cnt = 0
 
@@ -32,8 +33,6 @@ if __name__ == '__main__':
 
         slide = open_slide(slide_path)
         slide_dims = slide.dimensions
-        # print("CHECK POINT 1")
-        # print(slide_dims)
 
         dims = slide.level_dimensions
         num_levels = len(dims)

@@ -5,18 +5,18 @@ import random
 import logging
 from collections import OrderedDict
 import numpy as np
-import cv2
+# import cv2
 import torch
 import pandas as pd
 import torch.nn as nn
 # from torchvision.utils import make_grid
-import warnings
-from scipy.special import softmax
+# import warnings
+# from scipy.special import softmax
 import matplotlib.pyplot as plt
-from scipy import stats
+# from scipy import stats
 from PIL import Image
 
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+# from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 import yaml
 try:
@@ -57,17 +57,17 @@ class MetricTracker(object):
         fmtstr = '{name} average: {avg' + self.fmt + '}'
         return fmtstr.format(**self.__dict__)
     
-def compute_acc(y_pred, y_true):
-    y_pred = torch.argmax(y_pred, dim=1).cpu().numpy().reshape(-1)
-    y_true = y_true.cpu().numpy().reshape(-1)
-    return accuracy_score(y_true, y_pred)
+# def compute_acc(y_pred, y_true):
+#     y_pred = torch.argmax(y_pred, dim=1).cpu().numpy().reshape(-1)
+#     y_true = y_true.cpu().numpy().reshape(-1)
+#     return accuracy_score(y_true, y_pred)
 
-def compute_all_metrics(y_pred, y_true):
-    precision, recall, fscore, support = precision_recall_fscore_support(y_true, y_pred)
-    print('precision: {}'.format(precision))
-    print('recall: {}'.format(recall))
-    print('fscore: {}'.format(fscore))
-    print('support: {}'.format(support))
+# def compute_all_metrics(y_pred, y_true):
+#     precision, recall, fscore, support = precision_recall_fscore_support(y_true, y_pred)
+#     print('precision: {}'.format(precision))
+#     print('recall: {}'.format(recall))
+#     print('fscore: {}'.format(fscore))
+#     print('support: {}'.format(support))
     
 ############################################
 
@@ -381,6 +381,8 @@ def compute_classification_metrics(preds, targets, drop_last=False, inv_mask=Non
         targets = targets.masked_select(inv_mask)
     for class_idx in range(num_classes):
         # True Positives, False Positives, and False Negatives for each class
+        
+        class_idx += 1
         
         TP = ((preds == class_idx) & (targets == class_idx)).sum()  # (B,)
         FP = ((preds == class_idx) & (targets != class_idx)).sum()  # (B,)
