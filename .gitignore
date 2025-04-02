@@ -18,9 +18,5 @@ src/journal_040225_split_by_cases
 **/*.png
 BBDM2/results
 RAW_DATA/*
-log_slurm
-<<<<<<< HEAD
+src/log_slurm
 exp_*
-=======
-exp_*
->>>>>>> d0a85f5 (yam: init)
