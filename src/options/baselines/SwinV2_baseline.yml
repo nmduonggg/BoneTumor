@@ -1,7 +1,7 @@
 name: SwinTransformerV2_baseline
 gpu_ids: [0]
 job_dir: exp_cls_256_cls_retrain_with9
-token: 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
+token: ""
 
 network_G:
   which_model_G: swinv2_baseline

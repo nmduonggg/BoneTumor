@@ -17,6 +17,7 @@ from model import create_model
 import utils.utils as utils
 
 from huggingface_hub import login
+from dotenv import load_dotenv, find_dotenv
 
 abspath = os.path.abspath(__file__)
 
@@ -34,12 +35,15 @@ args = parser.parse_args()
 opt = option.parse(args.opt, root=args.root)
 
 opt = option.dict_to_nonedict(opt)
+load_dotenv(find_dotenv())
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '%d' % opt['gpu_ids'][0]
 device = torch.device('cuda:0' if opt['gpu_ids'] is not None else 'cpu')
 
+
 # HF Login to get pretrained weight
-# login(opt['token'])
+
+login(os.getenv("HF"))
     
 model = create_model(opt)
 

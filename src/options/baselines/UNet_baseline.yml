@@ -1,7 +1,7 @@
 name: unet
 gpu_ids: [0]
 job_dir: exp_segment
-token: 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
+token: ""
 
 network_G:
   which_model_G: unet_baseline
