@@ -1,7 +1,7 @@
 name: stacked_bbdm_discrete
 gpu_ids: [0]
 job_dir: exp_cls_256_cls_retrain_with9
-token: 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
+token: ""
 
 network_G:
   which_model_G: discrete_stacked_bbdm
