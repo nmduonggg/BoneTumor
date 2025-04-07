@@ -3,7 +3,6 @@ import numpy.random as random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from MinkowskiEngine import SparseTensor
 from timm.models.layers import trunc_normal_, DropPath
             
 class LayerNorm(nn.Module):
