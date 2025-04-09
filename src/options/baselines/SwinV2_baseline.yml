@@ -48,6 +48,7 @@ datasets:
     batch_size: 256
     balance: False
     augment: False
+    n_workers: 4
 
 path:
   pretrain_model: ~
