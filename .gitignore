@@ -21,3 +21,4 @@ RAW_DATA/*
 src/log_slurm
 exp_*
 .env
+_good_weights/
