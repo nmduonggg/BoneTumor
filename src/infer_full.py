@@ -31,6 +31,9 @@ parser.add_argument('--phase1_path', type=str, required=True)
 parser.add_argument('--phase2_path', type=str, required=True)
 parser.add_argument('--outdir', required=True)
 
+# visualization
+parser.add_argument('--collect_mid_step', action='store_true')
+
 args = parser.parse_args()
 opt = option.parse(args.opt, root=args.root)
 
@@ -185,7 +188,7 @@ def alpha_blending(im1, im2, alpha):
     out = cv2.addWeighted(im1, alpha , im2, 1-alpha, 0)
     return out
 
-def infer(infer_path, label_path, target_file, outdir, image_dict):
+def infer(infer_path, label_path, target_file, outdir, image_dict, collect_mid_step=False):
     global color_map
     infer_name = os.path.basename(infer_path)
     
@@ -249,7 +252,7 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
             # pred = (pred * 255).astype('uint8')
             # pred = cv2.resize(pred, (small_h, small_w), interpolation=cv2.INTER_NEAREST)
             # pred = apply_threshold_mapping(pred)    # hxwx7
-            pred = model(im)[0].cpu().numpy()
+            pred = model(im, collect_mid_step=collect_mid_step)[0].cpu().numpy()
             pred = cv2.resize(pred, (small_h, small_w), interpolation=cv2.INTER_NEAREST)
         preds_list.append(pred)
         
@@ -327,7 +330,7 @@ def infer(infer_path, label_path, target_file, outdir, image_dict):
     
     return huvos_ratio, image_dict
 
-def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
+def process_folder(label_folder, image_folder, outdir, target_file, case_dict, collect_mid_step=False):
     huvos_case = []
     label_names = [n for n in os.listdir(label_folder) if ('.jpg' in n or '.png' in n)]
     for label_name in label_names:
@@ -345,7 +348,8 @@ def process_folder(label_folder, image_folder, outdir, target_file, case_dict):
         write2file(image_name, target_file, 'a')
         
         huvos_ratio, image_dict = infer(infer_path, label_path,
-                                        target_file, outdir, image_dict)
+                                        target_file, outdir, image_dict,
+                                        collect_mid_step=collect_mid_step)
         if huvos_ratio is not None:
             huvos_case.append(huvos_ratio)
             
@@ -378,6 +382,7 @@ if __name__=='__main__':
     outdir = args.outdir    
     image_dir = args.images_dir
     label_dir = args.labels_dir
+    collect_mid_step = args.collect_mid_step
     print("Saving to dir:", outdir)
     
     pred_dict_path = os.path.join(outdir, 'pred_dict.json')
@@ -405,7 +410,9 @@ if __name__=='__main__':
         target_file = os.path.join(outdir, f"stats_{case.lower()}.txt")
         write2file(f"="*5 + f"{case}" + "="*5, target_file, 'w')
         
-        huvos_case, case_dict = process_folder(case_label_folder, case_image_folder, case_outdir, target_file, case_dict)
+        huvos_case, case_dict = process_folder(case_label_folder, case_image_folder,
+                                               case_outdir, target_file, case_dict,
+                                               collect_mid_step=collect_mid_step)
         huvos_case = round(huvos_case * 100, 1)
         write2file(f"Total Necrosis on case: {huvos_case}%", target_file, 'a')
         write2file(f"Huvos: {huvos_classify(huvos_case)}", target_file, 'a')

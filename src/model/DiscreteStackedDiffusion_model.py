@@ -87,7 +87,7 @@ class DiscreteStackedDiffusionModel(nn.Module):
             
         return output
         
-    def forward(self, x, infer=True):
+    def forward(self, x, infer=True, collect_mid_step=False):
         # BxCxHxW
         batch_size = x.size(0)
         
@@ -122,10 +122,12 @@ class DiscreteStackedDiffusionModel(nn.Module):
         x_conts = torch.cat([x_cont for _ in range(n_samples)], dim=0).to(x_cont.device)
         x_conds = torch.cat([x_cond for _ in range(n_samples)], dim=0).to(x_cond.device)
         
-        outs = self.phase2_refiner.sample_infer(x_conds, x_conts, clip_denoised=self.option['bbdm']['clip_denoised'])
+        outs = self.phase2_refiner.sample_infer(x_conds, x_conts, 
+                                                clip_denoised=self.option['bbdm']['clip_denoised'],
+                                                collect_mid_step=collect_mid_step)
         
         # outs = torch.cat([out_ori, outs], dim=0)
-        out = torch.mean(outs, dim=0, keepdim=True)
+        out = torch.mean(outs, dim=0, keepdim=True) # if collect mid step: the result is in the middel of sampling process
         # out = out + out_ori*0.9
         
         out = out.permute(0, 2, 3, 1) # BCHW -> BHWC

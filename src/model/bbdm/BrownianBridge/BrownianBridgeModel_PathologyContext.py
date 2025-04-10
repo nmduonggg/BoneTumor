@@ -26,6 +26,7 @@ class BrownianBridgeModel_Pathology(nn.Module):
         self.sample_type = model_params['sample_type']
         self.sample_step = model_params['sample_step']
         self.steps = None
+        self.all_imgs = list()
         self.register_schedule()
 
         # loss and objective
@@ -228,7 +229,7 @@ class BrownianBridgeModel_Pathology(nn.Module):
         return self.p_sample_loop(y, context, clip_denoised, sample_mid_step)
     
     @torch.no_grad()
-    def sample_infer(self, y, context=None, clip_denoised=True, sample_mid_step=False):
+    def sample_infer(self, y, context=None, clip_denoised=True, sample_mid_step=False, collect_mid_step=False):
         if self.condition_key == "nocond":
             context = None
         else:
@@ -241,8 +242,10 @@ class BrownianBridgeModel_Pathology(nn.Module):
                 imgs.append(img)
                 one_step_imgs.append(x0_recon)
             return imgs, one_step_imgs
-        else:
+        else:   # mostly use this branch
             img = y
             for i in range(len(self.steps)):
                 img, _ = self.p_sample(x_t=img, y=y, context=context, i=i, clip_denoised=clip_denoised)
+                # if collect_each_step and i % 10==0: self.all_imgs.append(img)
+                if collect_mid_step and i==len(self.steps)//2: break
             return img
