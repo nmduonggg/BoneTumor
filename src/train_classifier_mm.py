@@ -19,7 +19,7 @@ import utils.utils as utils
 import data.utils as data_utils
 
 from huggingface_hub import login
-
+from dotenv import load_dotenv, find_dotenv
 
 abspath = os.path.abspath(__file__)
 
@@ -35,7 +35,9 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '%d' % opt['gpu_ids'][0]
 device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
 
 # HF Login to get pretrained weight
-login(opt['token'])
+load_dotenv(find_dotenv())
+
+login(os.getenv("HF"))
 
 for phase, dataset_opt in opt['datasets'].items():
     if phase=='train': 

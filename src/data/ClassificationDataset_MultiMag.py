@@ -57,7 +57,8 @@ class ClassificationDataset_MultiMag(Dataset):
             ]
         )
         
-        self.scales = [0, 1, 2]
+        # self.scales = [0, 1, 2]
+        self.scales = [0, 1, 2]    # 5x and 20x
         # self.crop = A.CenterCrop(width=256, height=256)
 
         self.augmentation = A.Compose([
