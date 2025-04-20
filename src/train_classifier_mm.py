@@ -75,6 +75,7 @@ if opt['path']['pretrain_model'] is not None:
 
 train_opt = opt['train']
 
+
 if hasattr(model, "enable_lora_training"):
     model.enable_lora_training()
     

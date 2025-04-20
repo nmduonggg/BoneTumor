@@ -117,6 +117,8 @@ class UNI_lora_multimag_ISBI(nn.Module):
             nn.Linear(1024, 512), nn.Dropout(0.5),
             nn.Linear(512, num_classes))
         
+        self.apply_lora_to_vit(16, 32)
+        
     def hier_forward(self, im0):
         """
         im0 is original 5x numpy image without preprocessing
