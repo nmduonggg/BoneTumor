@@ -166,17 +166,17 @@ class UNI_lora_multimag_ISBI(nn.Module):
         fused_all = torch.cat([cls_2.unsqueeze(1), feat_0, feat_1], dim=1)  # use feat 20x attend to 5x and 10x
         # cont_cell = torch.cat([cls_cont.unsqueeze(1), feat_cell], dim=1)
         
-        fused_cls_0 = self.attn_01(fused_all)[:, 0, :]
+        fused_cls_2 = self.attn_01(fused_all)[:, 0, :]
         
-        out1 = self.classifier1(fused_cls_0)
-        out2 = self.classifier2(cls_0)
+        out1 = self.classifier1(fused_cls_2)
+        out2 = self.classifier2(cls_2)
         
         out = (out1 + out2) * 0.5
         
-        sim_loss = self.simCL(fused_cls_0, cls_0)
+        sim_loss = self.simCL(fused_cls_2, cls_2)
         
         # the below return is for the best
-        return out, cls_0, sim_loss
+        return out, cls_2, sim_loss
     
     def apply_lora_to_vit(self, lora_r, lora_alpha, first_layer_start=15):
         """

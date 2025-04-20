@@ -146,7 +146,11 @@ def train():
             
             pred = model(im0, im1, im2, scale=scale)
             # loss = loss_func(pred, gt) + 0.5 * regularization(pred, gt)
-            loss = loss_func(pred, gt)
+            try:
+                loss = loss_func(pred, gt)
+            except:
+                pred, cls_smallest, sim_loss = pred
+                loss = loss_func(pred, gt) + sim_loss * 0.1 
             
             optimizer.zero_grad()
             loss.backward()
