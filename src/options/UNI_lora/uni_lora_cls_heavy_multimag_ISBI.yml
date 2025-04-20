@@ -48,6 +48,7 @@ datasets:
     batch_size: 256
     balance: False
     augment: False
+    n_workers: 32
 
 path:
   # pretrain_model: /mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/pretrained/mobilenet/mobilenetv2_1.0-0c6065bc.pth
