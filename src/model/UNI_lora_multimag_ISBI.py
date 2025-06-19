@@ -107,7 +107,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         # login()
         # self.enc1 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
         # self.enc2 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
-        self.enc0 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
+        self.enc2 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
         
         self.attn_01 = CrossAttention(dim=1024, heads=8, dim_head=64, dropout=0.1)
         # self.attn_02 = CrossAttention(dim=1024, heads=8, dim_head=64, dropout=0.1)
