@@ -77,7 +77,7 @@ class ClassificationDataset_MultiMag(Dataset):
         for hat in scales[1:]:
             scale = 2 ** hat
             new_h, new_w = int(h // scale), int(w // scale)
-            cropper = A.RandomCrop(width=new_w, height=new_h)
+            cropper = A.CenterCrop(width=new_w, height=new_h)
             cropped = cropper(image=image, mask=mask)
             image = cv2.resize(cropped['image'], (w, h))
             mask = cv2.resize(cropped['mask'], (w, h), 
