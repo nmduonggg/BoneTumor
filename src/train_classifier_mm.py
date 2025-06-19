@@ -272,6 +272,10 @@ def evaluate():
             # all_preds.append(pred.clone().detach().cpu())
             # all_gts.append(gt.clone().detach().cpu()
         acc_tracker.update(acc_, batch_size)
+        
+    del im2
+    del im1
+    del im0
     
     # print(all_preds)
     # if train_opt['mode']=='classification':
