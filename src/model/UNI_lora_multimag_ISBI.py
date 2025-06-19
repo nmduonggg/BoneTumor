@@ -155,8 +155,8 @@ class UNI_lora_multimag_ISBI(nn.Module):
         """
         return out of x2
         """
-        feat_0 = self.enc0.forward_features(x0)
-        feat_1 = self.enc1.forward_features(x1)
+        feat_0 = self.enc2.forward_features(x0)
+        feat_1 = self.enc2.forward_features(x1)
         feat_2 = self.enc2.forward_features(x2)
         
         cls_0, feat_0 = feat_0[:, 0, :], feat_0[:, 1:, :]
@@ -182,7 +182,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         """
         Apply LoRA to all the Linear layers in the Vision Transformer model.
         """
-        for enc in [self.enc1, self.enc2]:
+        for enc in [self.enc2]:
             # Step 1: Collect the names of layers to replace
             layers_to_replace = []
             
@@ -209,11 +209,11 @@ class UNI_lora_multimag_ISBI(nn.Module):
     # Additional helper to enable LoRA fine-tuning
     def enable_lora_training(self):
         # LoRA for enc 1
-        for param in self.enc1.parameters():
-            param.requires_grad = False
-        for name, param in self.enc1.named_parameters():
-            if "lora" in name:
-                param.requires_grad = True
+        # for param in self.enc1.parameters():
+        #     param.requires_grad = False
+        # for name, param in self.enc1.named_parameters():
+        #     if "lora" in name:
+        #         param.requires_grad = True
            
         # LoRA for enc 2     
         for param in self.enc2.parameters():
@@ -222,12 +222,12 @@ class UNI_lora_multimag_ISBI(nn.Module):
             if "lora" in name:
                 param.requires_grad = True
          
-        # LoRA for enc 0       
-        for param in self.enc0.parameters():
-            param.requires_grad = False
-        for name, param in self.enc0.named_parameters():
-            if "lora" in name:
-                param.requires_grad = True
+        # # LoRA for enc 0       
+        # for param in self.enc0.parameters():
+        #     param.requires_grad = False
+        # for name, param in self.enc0.named_parameters():
+        #     if "lora" in name:
+        #         param.requires_grad = True
 
         # Enable gradients for the classifier head
         for param in self.classifier1.parameters():
