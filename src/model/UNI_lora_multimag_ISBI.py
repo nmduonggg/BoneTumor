@@ -11,6 +11,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torchvision import transforms
+
 class SimilarityContrastiveLoss(nn.Module):
     """
     Similarity Contrastive Loss:
@@ -103,21 +105,29 @@ class UNI_lora_multimag_ISBI(nn.Module):
         super().__init__()
         self.simCL = SimilarityContrastiveLoss(0.2)
         # login()
-        self.enc1 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
-        self.enc2 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
+        # self.enc1 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
+        # self.enc2 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
         self.enc0 = timm.create_model("hf-hub:MahmoodLab/uni", pretrained=True, init_values=1e-5, dynamic_img_size=True)
         
-        self.attn_01 = CrossAttention(dim=1024, heads=8, dim_head=64, dropout=0.2)
+        self.attn_01 = CrossAttention(dim=1024, heads=8, dim_head=64, dropout=0.1)
         # self.attn_02 = CrossAttention(dim=1024, heads=8, dim_head=64, dropout=0.1)
         
         self.classifier1 = nn.Sequential(
-            nn.Linear(1024, 512), nn.Dropout(0.5),
+            nn.Linear(1024, 512), nn.ReLU(), nn.Dropout(0.1),
             nn.Linear(512, num_classes))
         self.classifier2 = nn.Sequential(
-            nn.Linear(1024, 512), nn.Dropout(0.5),
+            nn.Linear(1024, 512), nn.ReLU(), nn.Dropout(0.1),
             nn.Linear(512, num_classes))
         
         self.apply_lora_to_vit(16, 32)
+        
+        self.transform = transforms.Compose(
+            [
+                # transforms.Resize(224),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+            ]
+        )
         
     def hier_forward(self, im0):
         """
