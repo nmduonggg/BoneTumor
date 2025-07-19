@@ -375,11 +375,14 @@ if __name__=='__main__':
     
     
     done_cases = [f"Case_{n}" for n in []]
-    cases = [f"Case_{n}" for n in range(1, 11)]
-    cases = ["Case_6", "Case_8"]
+    # cases = [f"Case_{n}" for n in range(1, 11)]
+    cases = ["Case_6"]
     
     metadatas = {}
     outdir = args.outdir    
+    
+    os.makedirs(outdir, exist_ok=True)
+    
     image_dir = args.images_dir
     label_dir = args.labels_dir
     collect_mid_step = args.collect_mid_step
