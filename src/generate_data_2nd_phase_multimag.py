@@ -149,7 +149,7 @@ def infer(image_filepath, label_filepath, size=256):
         
         im = transform(im_patch).float().unsqueeze(0)   # Bx3xHW
         # b, _, h, w = im.shape
-        
+        print(device)
         im = im.to(device)
         with torch.no_grad():
             pred = model.hier_forward(im)
