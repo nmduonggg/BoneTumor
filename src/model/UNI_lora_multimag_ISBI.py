@@ -139,23 +139,15 @@ class UNI_lora_multimag_ISBI(nn.Module):
         device = next(self.classifier.parameters()).device
         
         im0 = self.transform(im0).float().unsqueeze(0)
-        x_im0 = torch.cat([im0 for _ in range((256 // 64))], dim=0).to(device)
+        x_im0 = torch.cat([im0 for _ in range((256 // (128/2)))], dim=0).to(device) # /2 for h and w
         im1s, num_h1, num_w1, h1, w1 = utils.crop_tensor(im0, crop_sz=128, step=128)
         
-        y_im1s = []
-        for im1 in im1s:
-            x_im1 = torch.cat([im1 for _ in range(256 // 64)], dim=0).to(device)
-            im2s, num_h, num_w, h, w = utils.crop_tensor(im1, crop_sz=64, step=64)
-            x_im2 = torch.cat(im2s, dim=0).to(device)
+        x_im1 = torch.cat(im1s, dim=0).to(device)
             
-            y_im2s = self.forward(x_im0, x_im1, x_im2, None) # BxCl
+        y_im1s = self.forward(x_im0, x_im1, x_im1, None) # BxCl
             # print(y_im2s)
-            y_im2s = torch.ones([x_im2.size(0), 1, x_im2.size(2), x_im2.size(3)]).to(device) * y_im2s.reshape(len(im2s), -1, 1, 1)  # BxClxHxW
+        y_im1s = torch.ones([x_im1.size(0), 1, x_im1.size(2), x_im1.size(3)]).to(device) * y_im1s.reshape(len(im1s), -1, 1, 1)  # BxClxHxW
             
-            y_im1 = utils.combine_output(y_im2s, num_h, num_w, h, w, 64, 64, channel=self.out_nc)
-            y_im1s.append(y_im1.cpu())
-            
-        y_im1s = torch.cat(y_im1s, dim=0)
         y_im0 = utils.combine_output(y_im1s, num_h1, num_w1, h1, w1, 128, 128, channel=self.out_nc)
         
         return y_im0
@@ -165,28 +157,28 @@ class UNI_lora_multimag_ISBI(nn.Module):
         """
         return out of x2
         """
-        feat_0 = self.enc2.forward_features(x0)
-        feat_1 = self.enc2.forward_features(x1)
-        feat_2 = self.enc2.forward_features(x2)
+        
+        B = x0.size(0)
+        feat = torch.cat([x0, x1])
+        
+        feat = self.enc2.forward_features(feat)
+        feat_0 = feat[:B, ...]
+        feat_1 = feat[B:, ...]
         
         cls_0, feat_0 = feat_0[:, 0, :], feat_0[:, 1:, :]
         cls_1, feat_1 = feat_1[:, 0, :], feat_1[:, 1:, :]
-        cls_2, feat_2 = feat_2[:, 0, :], feat_2[:, 1:, :]
         
-        fused_all = torch.cat([cls_2.unsqueeze(1), feat_0, feat_1], dim=1)  # use feat 20x attend to 5x and 10x
+        fused_all = torch.cat([cls_1.unsqueeze(1), feat_0, feat_1], dim=1)  # use feat 20x attend to 5x and 10x
         # cont_cell = torch.cat([cls_cont.unsqueeze(1), feat_cell], dim=1)
         
         fused_cls_2 = self.attn_01(fused_all)[:, 0, :]
         
         out1 = self.classifier1(fused_cls_2)
-        out2 = self.classifier2(cls_2)
         
-        out = (out1 + out2) * 0.5
-        
-        sim_loss = self.simCL(fused_cls_2, cls_2)
+        sim_loss = self.simCL(fused_cls_2, cls_1)
         
         # the below return is for the best
-        return out, cls_2, sim_loss
+        return out1, cls_1, sim_loss
     
     def apply_lora_to_vit(self, lora_r, lora_alpha, first_layer_start=15):
         """
