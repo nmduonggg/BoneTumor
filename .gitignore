@@ -22,3 +22,4 @@ src/log_slurm
 exp_*
 .env
 _good_weights/
+log_slurm/*

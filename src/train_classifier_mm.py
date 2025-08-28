@@ -135,16 +135,15 @@ def train():
             if len(batch)==2:
                 im, gt = batch
             else:
-                im0, im1, im2, gt, scale = batch
+                im0, im1, gt, scale = batch
                 scale = scale.to(device)
             batch_size = im0.shape[0]
-            im2 = im2.to(device)
             im1 = im1.to(device)
             im0 = im0.to(device)
             gt = gt.to(device)
             scale  = scale.to(device)
             
-            pred = model(im0, im1, im2, scale=scale)
+            pred = model(im0, im1, scale=scale)
             # loss = loss_func(pred, gt) + 0.5 * regularization(pred, gt)
             try:
                 loss = loss_func(pred, gt)

@@ -58,7 +58,7 @@ class ClassificationDataset_MultiMag(Dataset):
         )
         
         # self.scales = [0, 1, 2]
-        self.scales = [0, 1, 2]    # 5x and 20x
+        self.scales = [0, 1]    # 5x and 20x
         # self.crop = A.CenterCrop(width=256, height=256)
 
         self.augmentation = A.Compose([
@@ -144,6 +144,6 @@ class ClassificationDataset_MultiMag(Dataset):
         # x = torch.stack(xs, dim=0)  # NxCxHxW
         y = ys[-1]
         
-        x0, x1, x2 = xs
+        x0, x1 = xs
         
-        return x0, x1, x2, y, self.scales[-1]
+        return x0, x1, y, self.scales[-1]

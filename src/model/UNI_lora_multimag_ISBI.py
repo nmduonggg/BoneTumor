@@ -115,9 +115,6 @@ class UNI_lora_multimag_ISBI(nn.Module):
         self.classifier1 = nn.Sequential(
             nn.Linear(1024, 512), nn.ReLU(), nn.Dropout(0.1),
             nn.Linear(512, num_classes))
-        self.classifier2 = nn.Sequential(
-            nn.Linear(1024, 512), nn.ReLU(), nn.Dropout(0.1),
-            nn.Linear(512, num_classes))
         
         self.apply_lora_to_vit(16, 32)
         
@@ -153,7 +150,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         return y_im0
         
         
-    def forward(self, x0, x1, x2, scale=None):
+    def forward(self, x0, x1, scale=None):
         """
         return out of x2
         """
