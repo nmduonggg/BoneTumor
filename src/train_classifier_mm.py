@@ -241,14 +241,14 @@ def evaluate():
             im0, im1, gt, scale = batch
             scale = scale.to(device)
         batch_size = im0.shape[0]
-        im2 = im2.to(device)
+        # im2 = im2.to(device)
         im1 = im1.to(device)
         im0 = im0.to(device)
         gt = gt.to(device)
         scale  = scale.to(device)
         
         with torch.no_grad():
-            pred = model(im0, im1, im2, scale=scale)
+            pred = model(im0, im1, scale=scale)
             
         try:
             loss = loss_func(pred, gt)
@@ -272,7 +272,6 @@ def evaluate():
             # all_gts.append(gt.clone().detach().cpu()
         acc_tracker.update(acc_, batch_size)
         
-    del im2
     del im1
     del im0
     
