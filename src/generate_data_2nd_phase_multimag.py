@@ -153,12 +153,11 @@ def infer(image_filepath, label_filepath, size=256):
         im = im.to(device)
         with torch.no_grad():
             pred = model.hier_forward(im)
-            print(pred)
         
         # pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
         # pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
-        pred_im = torch.ones((size, size, 1)) * pred.cpu().reshape(1, 1, -1)    # -> HxWxC
-        preds_list.append(pred_im.numpy())
+        # pred_im = torch.ones((size, size, 1)) * pred.cpu().reshape(1, 1, -1)    # -> HxWxC
+        preds_list.append(pred.cpu().numpy())
     # print(num_h, num_w, h, w)
     
     pred = utils.combine(preds_list, num_h, num_w, h, w, size, step, len(color_map))
