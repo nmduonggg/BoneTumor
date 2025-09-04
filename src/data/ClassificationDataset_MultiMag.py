@@ -65,8 +65,8 @@ class ClassificationDataset_MultiMag(Dataset):
             A.VerticalFlip(p=0.5),
             A.RandomRotate90(p=0.5),
             A.Transpose(p=0.5),
-            A.RandomBrightnessContrast(p=0.1),
-            A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
+            # A.RandomBrightnessContrast(p=0.1),
+            # A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
         ]
         )
         

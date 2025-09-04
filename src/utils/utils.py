@@ -324,9 +324,9 @@ def compute_segmentation_metrics(preds, targets):
         FN = ((preds != class_idx) & (targets == class_idx)).sum(dim=(1, 2))  # (B,)
         
         if (TP + FP + FN).sum() == 0:
-            iou_per_class.append(1.0)  # Perfect IoU
-            precision_per_class.append(1.0)  # Perfect Precision
-            recall_per_class.append(1.0)  # Perfect Recall
+            iou_per_class.append(0.0)  # Perfect IoU
+            precision_per_class.append(0.0)  # Perfect Precision
+            recall_per_class.append(0.0)  # Perfect Recall
         else:
             # Avoid division by zero by adding a small epsilon
             epsilon = 1e-7
@@ -389,9 +389,9 @@ def compute_classification_metrics(preds, targets, drop_last=False, inv_mask=Non
         FN = ((preds != class_idx) & (targets == class_idx)).sum()  # (B,)
         
         if (TP + FP + FN).sum() == 0:
-            iou_per_class.append(1.0)  # Perfect IoU
-            precision_per_class.append(1.0)  # Perfect Precision
-            recall_per_class.append(1.0)  # Perfect Recall
+            iou_per_class.append(0.0)  # Perfect IoU
+            precision_per_class.append(0.0)  # Perfect Precision
+            recall_per_class.append(0.0)  # Perfect Recall
         else:
             # Avoid division by zero by adding a small epsilon
             epsilon = 1e-7
