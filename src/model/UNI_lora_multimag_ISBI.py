@@ -170,7 +170,8 @@ class UNI_lora_multimag_ISBI(nn.Module):
         
         fused_cls_2 = self.attn_01(fused_all)[:, 0, :]
         
-        out1 = self.classifier1(fused_cls_2)
+        out1 = self.classifier1(
+            (cls_1 + fused_cls_2) * 0.5)
         
         sim_loss = self.simCL(fused_cls_2, cls_1)
         

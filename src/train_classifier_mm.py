@@ -113,7 +113,8 @@ def train():
             
             print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
             for k, v in eval_metrics.items():
-                eval_metrics[k] = np.mean(v / len(valid_loader))
+                # eval_metrics[k] = np.mean(v / len(valid_set))
+                eval_metrics[k] = np.mean(v)
                 print(f"Eval {k}: {round(eval_metrics[k], 3)}", end= '|')
                 
             if opt['wandb']: 
@@ -131,7 +132,8 @@ def train():
         all_train_preds = []
         all_train_gts = []
         scale = None
-        for batch in tqdm(train_loader, total=len(train_loader)):
+        for batch_idx, batch in tqdm(train_loader, total=len(train_loader)):
+            
             if len(batch)==2:
                 im, gt = batch
             else:
@@ -145,11 +147,15 @@ def train():
             
             pred = model(im0, im1, scale=scale)
             # loss = loss_func(pred, gt) + 0.5 * regularization(pred, gt)
+            sim_loss = 0.0
             try:
                 loss = loss_func(pred, gt)
             except:
                 pred, cls_smallest, sim_loss = pred
-                loss = loss_func(pred, gt) + sim_loss * 0.1 
+                loss = loss_func(pred, gt) + sim_loss * 0.01 
+                
+            all_train_gts.append(gt.cpu().tolist())
+            all_train_preds.append(torch.argmax(pred, dim=1).cpu().numpy().tolist())
             
             optimizer.zero_grad()
             loss.backward()
@@ -160,27 +166,28 @@ def train():
                 iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(pred, gt)
             elif train_opt['mode']=='classification':
                 iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
-                train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_)
-                train_metrics['prec'] = train_metrics.get('prec', 0) + np.array(prec_)
-                train_metrics['recall'] = train_metrics.get('recall', 0) + np.array(recall_)
-                train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_)
-                train_metrics['loss'] = train_metrics.get('loss', 0) + loss.detach().cpu().item()
+                train_metrics['iou'] = train_metrics.get('iou', 0) + np.array(iou_) * batch_size
+                train_metrics['prec'] = train_metrics.get('prec', 0) + np.array(prec_) * batch_size
+                train_metrics['recall'] = train_metrics.get('recall', 0) + np.array(recall_) * batch_size
+                train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_) * batch_size
+                train_metrics['loss'] = train_metrics.get('loss', 0) + loss.detach().cpu().item() * batch_size
+                train_metrics['sim_loss'] = train_metrics.get('sim_loss', 0) + sim_loss.detach().cpu().item() * batch_size
 
                 # all_train_preds.append(pred.clone().detach().cpu())
                 # all_train_gts.append(gt.clone().detach().cpu())
             acc_tracker.update(acc_, batch_size)
             
-            
             global_step += 1
             
             # Validation #
-            if (global_step % train_opt['val_step_freq']==0):    
+            if (batch_idx % train_opt['val_batch_freq']==0):    
                 print("Evaluating...")
                 eval_loss, eval_acc, eval_metrics = evaluate()
                 
                 print(f"[EVAL] Epoch {epoch}|{eval_loss}|{eval_acc}")
                 for k, v in eval_metrics.items():
-                    eval_metrics[k] = np.mean(v / len(valid_loader))
+                    # eval_metrics[k] = np.mean(v / len(valid_set))
+                    eval_metrics[k] = np.mean(v)
                     print(f"Eval {k}: {round(eval_metrics[k], 3)}", end= '|')
                     
                 if opt['wandb']: 
@@ -208,7 +215,7 @@ def train():
         #     train_metrics['acc'] = train_metrics.get('acc', 0) + np.array(acc_)*batch_size
         
         for k, v in train_metrics.items():
-            train_metrics[k] = np.mean(v / len(train_loader))
+            train_metrics[k] = np.mean(v / len(train_set))
             print(f"Train {k}: {round(train_metrics[k], 3)}", end= '|')
             
         if opt['wandb']: wandb.log({f"train_{k}": v for k, v in train_metrics.items()})
@@ -249,7 +256,9 @@ def evaluate():
         
         with torch.no_grad():
             pred = model(im0, im1, scale=scale)
-            
+        all_preds.append(pred.cpu().numpy())
+        all_gts.append(gt.squeeze().cpu())
+        
         try:
             loss = loss_func(pred, gt)
         except:
@@ -262,15 +271,24 @@ def evaluate():
         elif train_opt['mode']=='classification':
             iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(pred, gt)
         else: assert(0), train_opt['mode']
-        
-        metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)
-        metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)
-        metrics['recall'] = metrics.get('recall', 0) + np.array(recall_)
-        metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
-        metrics['loss'] = metrics.get('loss', 0) + np.array(loss.detach().cpu().item()) 
             # all_preds.append(pred.clone().detach().cpu())
             # all_gts.append(gt.clone().detach().cpu()
         acc_tracker.update(acc_, batch_size)
+        
+    all_preds = torch.cat(all_preds, dim=0)
+    all_gts = torch.cat(all_gts, dim=0)
+        
+    if train_opt['mode']=='segment':
+        iou_, prec_, recall_, acc_ = utils.compute_segmentation_metrics(all_preds, all_gts)
+    elif train_opt['mode']=='classification':
+        iou_, prec_, recall_, acc_ = utils.compute_classification_metrics(all_preds, all_gts)
+    else: assert(0), train_opt['mode']
+        
+    metrics['iou'] = metrics.get('iou', 0) + np.array(iou_)
+    metrics['prec'] = metrics.get('prec', 0) + np.array(prec_)
+    metrics['recall'] = metrics.get('recall', 0) + np.array(recall_) 
+    metrics['acc'] = metrics.get('acc', 0) + np.array(acc_)
+    metrics['loss'] = metrics.get('loss', 0) + np.array(loss.detach().cpu().item())
         
     del im1
     del im0
