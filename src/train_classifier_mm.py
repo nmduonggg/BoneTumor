@@ -256,14 +256,16 @@ def evaluate():
         
         with torch.no_grad():
             pred = model(im0, im1, scale=scale)
-        all_preds.append(pred.cpu().numpy())
-        all_gts.append(gt.squeeze().cpu())
+
         
         try:
             loss = loss_func(pred, gt)
         except:
             pred, cls_smallest, sim_loss = pred
             loss = loss_func(pred, gt)
+        all_preds.append(pred.cpu().numpy())
+        all_gts.append(gt.squeeze().cpu())
+        
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
         
         if train_opt['mode']=='segment':
