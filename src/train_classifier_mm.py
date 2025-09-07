@@ -263,8 +263,8 @@ def evaluate():
         except:
             pred, cls_smallest, sim_loss = pred
             loss = loss_func(pred, gt)
-        all_preds.append(pred.cpu().numpy())
-        all_gts.append(gt.squeeze().cpu())
+        all_preds.append(pred.cpu())
+        all_gts.append(gt.squeeze())
         
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
         
