@@ -154,8 +154,8 @@ def train():
                 pred, cls_smallest, sim_loss = pred
                 loss = loss_func(pred, gt) + sim_loss * 0.01 
                 
-            all_train_gts.append(gt.cpu().tolist())
-            all_train_preds.append(torch.argmax(pred, dim=1).cpu().numpy().tolist())
+            # all_train_gts.append(gt.cpu())
+            # all_train_preds.append(pred.cpu())
             
             optimizer.zero_grad()
             loss.backward()
@@ -264,7 +264,7 @@ def evaluate():
             pred, cls_smallest, sim_loss = pred
             loss = loss_func(pred, gt)
         all_preds.append(pred.cpu())
-        all_gts.append(gt.squeeze())
+        all_gts.append(gt.squeeze().cpu())
         
         loss_tracker.update(loss.detach().cpu().item(), batch_size)
         
