@@ -132,7 +132,7 @@ def train():
         all_train_preds = []
         all_train_gts = []
         scale = None
-        for batch_idx, batch in tqdm(train_loader, total=len(train_loader)):
+        for batch_idx, batch in tqdm(enumerate(train_loader), total=len(train_loader)):
             
             if len(batch)==2:
                 im, gt = batch
