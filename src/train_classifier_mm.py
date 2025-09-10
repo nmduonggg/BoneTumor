@@ -257,7 +257,6 @@ def evaluate():
         with torch.no_grad():
             pred = model(im0, im1, scale=scale)
 
-        
         try:
             loss = loss_func(pred, gt)
         except:

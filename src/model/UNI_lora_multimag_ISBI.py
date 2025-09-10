@@ -232,6 +232,8 @@ class UNI_lora_multimag_ISBI(nn.Module):
         # Enable gradients for the classifier head
         for param in self.classifier1.parameters():
             param.requires_grad = True
+        for param in self.enc2.parameters():
+            param.requires_grad = True
 
         
     
