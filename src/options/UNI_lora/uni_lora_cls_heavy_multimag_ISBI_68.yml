@@ -69,6 +69,7 @@ train:
   manual_seed: 2000
   val_freq: 1
   val_step_freq: 5000
+  val_batch_freq: 500
 
   mode: classification
 
