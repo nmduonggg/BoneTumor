@@ -135,8 +135,14 @@ class UNI_lora_multimag_ISBI(nn.Module):
         """
         device = next(self.classifier.parameters()).device
         
+        
+        ### CROP IMAGES
+        ### So we need to padding here in order to ensure that the subimages at corner are processed properly.
+        
+        
+        
         im0 = self.transform(im0).float().unsqueeze(0)
-        x_im0 = torch.cat([im0 for _ in range((256 // (128/2)))], dim=0).to(device) # /2 for h and w
+        x_im0 = torch.cat([im0 for _ in range(int((256 // 128)**2))], dim=0).to(device) # /2 for h and w
         im1s, num_h1, num_w1, h1, w1 = utils.crop_tensor(im0, crop_sz=128, step=128)
         
         x_im1 = torch.cat(im1s, dim=0).to(device)
