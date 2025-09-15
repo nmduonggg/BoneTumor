@@ -133,7 +133,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
             - cut into 10x 20x
             - preprocess each, forward
         """
-        device = next(self.classifier.parameters()).device
+        device = next(self.classifier1.parameters()).device
         
         
         ### CROP IMAGES
