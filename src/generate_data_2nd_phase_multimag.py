@@ -137,7 +137,7 @@ def infer(image_filepath, label_filepath, size=256):
                 transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
             ]
         )
-    for im_patch, gt_patch in zip(image_patches, label_patches):
+    for im_patch, gt_patch in tqdm(zip(image_patches, label_patches), total=len(image_patches)):
         
         assert(im_patch.size == gt_patch.size)
         # im_patch, gt_patch = fix_label_image(im_patch, gt_patch)
@@ -153,6 +153,7 @@ def infer(image_filepath, label_filepath, size=256):
         im = im.to(device)
         with torch.no_grad():
             pred = model.hier_forward(im)
+        print("Done hier forward for 1 patch")
         
         # pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
         # pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
