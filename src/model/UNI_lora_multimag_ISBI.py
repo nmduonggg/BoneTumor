@@ -143,6 +143,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         
         im0 = self.transform(im0).float().unsqueeze(0)
         x_im0 = torch.cat([im0 for _ in range(int((256 // 128)**2))], dim=0).to(device) # /2 for h and w
+        x_im0 = x_im0.squeeze(1)
         print("CKPT 2")
         im1s, num_h1, num_w1, h1, w1 = utils.crop_tensor(im0, crop_sz=128, step=128)
         print("CKPT 3")
