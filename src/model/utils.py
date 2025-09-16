@@ -26,6 +26,8 @@ def crop_tensor(img, crop_sz, step):
     im: [BxCxHxW]
     """
     n_channels = len(img.shape)
+    if n_channels == 3:
+        img = img.unsqueeze(0)
     b, c, h, w = img.shape
     
     h_space = np.arange(0, h - crop_sz + 1, step)
