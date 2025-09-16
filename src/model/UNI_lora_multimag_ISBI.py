@@ -145,10 +145,11 @@ class UNI_lora_multimag_ISBI(nn.Module):
         x_im0 = torch.cat([im0 for _ in range(int((256 // 128)**2))], dim=0).to(device) # /2 for h and w
         print("CKPT 2")
         im1s, num_h1, num_w1, h1, w1 = utils.crop_tensor(im0, crop_sz=128, step=128)
-        
+        print("CKPT 3")
         x_im1 = torch.cat(im1s, dim=0).to(device)
             
         y_im1s = self.forward(x_im0, x_im1, x_im1, None) # BxCl
+        print("CKPT 4")
             # print(y_im2s)
         y_im1s = torch.ones([x_im1.size(0), 1, x_im1.size(2), x_im1.size(3)]).to(device) * y_im1s.reshape(len(im1s), -1, 1, 1)  # BxClxHxW
         print(y_im1s.shape)
