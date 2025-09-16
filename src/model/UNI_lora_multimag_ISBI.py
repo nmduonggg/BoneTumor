@@ -165,8 +165,9 @@ class UNI_lora_multimag_ISBI(nn.Module):
         
         B = x0.size(0)
         feat = torch.cat([x0, x1])
-        
+        print("CKPT 1.1")
         feat = self.enc2.forward_features(feat)
+        print("CKPT 1.2.")
         feat_0 = feat[:B, ...]
         feat_1 = feat[B:, ...]
         
@@ -175,8 +176,9 @@ class UNI_lora_multimag_ISBI(nn.Module):
         
         fused_all = torch.cat([cls_1.unsqueeze(1), feat_0, feat_1], dim=1)  # use feat 20x attend to 5x and 10x
         # cont_cell = torch.cat([cls_cont.unsqueeze(1), feat_cell], dim=1)
-        
+        print("CKPT 1.3")
         fused_cls_2 = self.attn_01(fused_all)[:, 0, :]
+        print("CKPT 1.4")
         
         out1 = self.classifier1(
             (cls_1 + fused_cls_2) * 0.5)
