@@ -220,12 +220,12 @@ if __name__=='__main__':
             label_filepath = os.path.join(case_dir, 'labels', crop_label_name)                
             
             pred_image, label_image, img_image = infer(image_filepath, label_filepath)
-            
+            print("Done inference")
             # plt.imsave(os.path.join(input_folder, f"{crop_index}.png"), pred_image)
             np.save(os.path.join(input_folder, f"{crop_index}.npy"), pred_image)    # hxwx7
             plt.imsave(os.path.join(label_folder, f"{crop_index}.png"), label_image)
             plt.imsave(os.path.join(img_folder, f"{crop_index}.png"), img_image)
-            
+            print("Done saving")
             metadata['case'] = metadata.get('case', case_name) 
             original_data_list.append(metadata)
             
