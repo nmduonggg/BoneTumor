@@ -165,12 +165,14 @@ class UNI_lora_multimag_ISBI(nn.Module):
         """
         
         B = x0.size(0)
-        feat = torch.cat([x0, x1])
+        # feat = torch.cat([x0, x1])
+        
         print("CKPT 1.1")
-        feat = self.enc2.forward_features(feat)
+        feat_0 = self.enc2.forward_features(x0)
+        feat_1 = self.enc2.forward_features(x1)
         print("CKPT 1.2.")
-        feat_0 = feat[:B, ...]
-        feat_1 = feat[B:, ...]
+        # feat_0 = feat[:B, ...]
+        # feat_1 = feat[B:, ...]
         
         cls_0, feat_0 = feat_0[:, 0, :], feat_0[:, 1:, :]
         cls_1, feat_1 = feat_1[:, 0, :], feat_1[:, 1:, :]
