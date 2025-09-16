@@ -208,6 +208,7 @@ if __name__=='__main__':
         
         # original_data_list += data_list
         cnt = 0
+        print("Total data ponts for this case: ", len(data_list))
         print("Start from crop_index:", data_list[0]['crop_index'])
         for metadata in tqdm(data_list, total=len(data_list)):
             crop_image_name = metadata['croped_image_filename']
