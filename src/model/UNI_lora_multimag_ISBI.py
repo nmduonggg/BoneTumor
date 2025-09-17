@@ -153,7 +153,8 @@ class UNI_lora_multimag_ISBI(nn.Module):
         print("CKPT 4")
             # print(y_im2s)
         
-        print(len(y_im1s), y_im1s[0].shape)
+        # print(len(y_im1s), y_im1s[0].shape)
+        y_ims = torch.cat(y_im1s)
             
         y_im1s = torch.ones([x_im1.size(0), 1, x_im1.size(2), x_im1.size(3)]).to(device) * y_im1s.reshape(x_im1.size(0), -1, 1, 1)  # BxClxHxW
         print(y_im1s.shape)
