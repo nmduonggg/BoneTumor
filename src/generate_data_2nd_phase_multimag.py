@@ -44,7 +44,7 @@ device = torch.device('cuda:0' if opt['gpu_ids'] is not None else 'cpu')
 # device = torch.device('cpu')
 
 # HF Login to get pretrained weight
-# login(opt['token'])
+login(opt['token'])
 # import subprocess
 # subprocess.run(["huggingface-cli", "login", "--token", opt['token']])
 # login(opt['token'])
