@@ -149,7 +149,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         print("CKPT 3")
         x_im1 = torch.cat(im1s, dim=0).to(device)
         print(x_im0.shape, x_im1.shape)
-        y_im1s[0] = self.forward(x_im0, x_im1, None) # BxCl
+        y_im1s = self.forward(x_im0, x_im1, None)[0] # BxCl
         print("CKPT 4")
             # print(y_im2s)
         
