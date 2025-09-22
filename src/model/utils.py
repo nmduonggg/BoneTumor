@@ -50,20 +50,20 @@ def crop_tensor(img, crop_sz, step):
 
 def combine_output(sr_list, num_h, num_w, h, w, patch_size, step, channel=3):
     index=0
-    sr_img = torch.zeros((1, channel, h, w)).to(sr_list[0].device)
+    sr_img = torch.zeros((channel, h, w)).to(sr_list[0].device)
     # print(h, w, num_h, num_w, channel)
     for i in range(num_h):
         for j in range(num_w):
             sr_subim = sr_list[index]
             
-            sr_img[:, :, i*step: i*step+patch_size, j*step: j*step+patch_size]+=sr_subim
+            sr_img[:, i*step: i*step+patch_size, j*step: j*step+patch_size]+=sr_subim
             index+=1
             
     # sr_img=sr_img.astype('float32')
 
     for j in range(1,num_w):
-        sr_img[:, :, :, j*step:j*step+(patch_size-step)]/=2
+        sr_img[:, :, j*step:j*step+(patch_size-step)]/=2
 
     for i in range(1,num_h):
-        sr_img[:, :, i*step:i*step+(patch_size-step),:]/=2
+        sr_img[:, i*step:i*step+(patch_size-step),:]/=2
     return sr_img
