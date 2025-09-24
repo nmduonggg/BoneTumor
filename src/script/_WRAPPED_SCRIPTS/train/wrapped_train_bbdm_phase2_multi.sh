@@ -8,5 +8,5 @@
 #SBATCH --cpus-per-task=8       # Số CPU cho mỗi task
 conda init
 conda activate nmduong2
-cd /home/nmduongg/BoneTumor/works/BoneTumor/BBDM2
+cd /home/user01/aiotlab/nmduong/BoneTumor/BBDM2
 bash ./script/discreteBBDM/train_discrete_bbdm_multimag.sh
