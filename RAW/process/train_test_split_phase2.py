@@ -37,8 +37,8 @@ def write_to_json(train_indices, valid_indices, test_indices,
 
 if __name__=='__main__':
     
-    metadata_path = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2/metadata.json'   # update continuously
-    dataset_outpath = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2/dataset_split.json'
+    metadata_path = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2_multimag/metadata.json'   # update continuously
+    dataset_outpath = '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2_multimag/dataset_split.json'
     
     with open(metadata_path, 'r') as f:
         data_list = json.load(f)
