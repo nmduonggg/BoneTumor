@@ -583,6 +583,9 @@ class BBDMRunner_PathologyDiscrete(DiffusionBaseRunner):
                     self.net.train()
 
                     losses = []
+                    
+                    print(train_batch.shape)
+                    
                     for i in range(len(self.optimizer)):
                         # pdb.set_trace()
                         loss, acc = self.loss_fn(net=self.net,
