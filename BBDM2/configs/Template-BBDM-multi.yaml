@@ -15,7 +15,7 @@ testing:
   sample_num: 1
 
 data:
-  dataset_name: 'PredIm-1-ysubx-concat-with9-discrete'
+  dataset_name: 'PredIm-1-ysubx-concat-with9-discrete-multi'
   dataset_type: 'custom_aligned_refine_concat_discrete_vector'
   dataset_config:
     dataset_path: '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2_multimag'
