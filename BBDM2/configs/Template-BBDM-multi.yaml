@@ -24,11 +24,11 @@ data:
     to_normal: True
     flip: False
   train:
-    batch_size: 128
+    batch_size: 64
     shuffle: True
   val:
-    batch_size: 2
-    shuffle: True
+    batch_size: 8
+    shuffle: False
   test:
     batch_size: 8
     # shuffle: False
