@@ -185,7 +185,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         im0 = im0.squeeze(1).unsqueeze(0)
         im1s, num_h1, num_w1, h1, w1 = utils.crop_tensor(im0, crop_sz=128, step=128)
         print("CKPT 3")
-        x_im1 = torch.stack(im1s, dim=1).to(device)
+        x_im1 = torch.cat(im1s, dim=1).to(device)
         print(x_im0.shape, x_im1.shape)
         x_im1 = x_im1.squeeze(0)
         
