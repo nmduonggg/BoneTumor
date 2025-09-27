@@ -19,6 +19,7 @@ from .Transformer_reorder import TransformerReorder
 from .Stacked_model import StackedModel
 from .StackedDiffusion_model import StackedDiffusionModel
 from .DiscreteStackedDiffusion_model import DiscreteStackedDiffusionModel
+from .DiscreteStackedDiffusion_model_multi import DiscreteStackedDiffusionModel_multi
 
 def create_model(opt):
     if opt['network_G']['which_model_G'] == 'uni_lora_cls':
@@ -54,5 +55,7 @@ def create_model(opt):
         return StackedDiffusionModel(opt)
     elif opt['network_G']['which_model_G'] == 'discrete_stacked_bbdm':
         return DiscreteStackedDiffusionModel(opt)
+    elif opt['network_G']['which_model_G'] == 'discrete_stacked_bbdm_multi':
+        return DiscreteStackedDiffusionModel_multi(opt)
     else:
         raise NotImplementedError('Model [{:s}] is not recognized.'.format(opt['network_G']['which_model_G']))

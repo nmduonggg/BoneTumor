@@ -376,7 +376,7 @@ if __name__=='__main__':
     
     done_cases = [f"Case_{n}" for n in []]
     # cases = [f"Case_{n}" for n in range(1, 11)]
-    cases = ["Case_6"]
+    cases = ["Case_6","Case_8"]
     
     metadatas = {}
     outdir = args.outdir    
