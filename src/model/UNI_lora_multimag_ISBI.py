@@ -190,7 +190,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         x_im1 = x_im1.squeeze(0)
         
         if len(x_im0.shape) == 5:
-            B, L, C, H, W = im0.shape
+            B, L, C, H, W = x_im0.shape
             x_im0 = x_im0.reshape(B*L, C, H, W)
             x_im1 = x_im1.reshape(B*L, C, H, W)
         else:
