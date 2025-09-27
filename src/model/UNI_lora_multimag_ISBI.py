@@ -193,7 +193,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
             B, L, C, H0, W0 = x_im0.shape
             _, _, _, H1, W1 = x_im1.shape
             x_im0 = x_im0.reshape(B*L, C, H0, W0)
-            x_im1 = x_im1.reshape(B*L, C, H0, W0)
+            x_im1 = x_im1.reshape(B*L, C, H1, W1)
         else:
             L, C, H, W = x_im0.shape
             B = 1
