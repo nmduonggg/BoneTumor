@@ -39,7 +39,7 @@ model:
   latent_before_quant_conv: False
   normalize_latent: False
   only_load_latent_mean_std: False
-  # model_load_path: "/mnt/disk4/nmduong/Vin-Uni-Bone-Tumor/BoneTumor/BBDM2/results/PredIm-1-ysubx-concat-with9-discrete/BrownianBridge-Pathology/checkpoint/top_model_epoch_3.pth" # model checkpoint path
+  model_load_path: "/home/user01/aiotlab/nmduong/BoneTumor/BBDM2/results/PredIm-1-ysubx-concat-with9-discrete-multi/BrownianBridge-Pathology/checkpoint/top_model_epoch_16.pth" # model checkpoint path
   # optim_sche_load_path:  # optimizer scheduler checkpoint path
 
   EMA:
