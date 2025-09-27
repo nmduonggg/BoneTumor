@@ -158,7 +158,7 @@ def infer(image_filepath, label_filepath, size=256):
         # pred = torch.argmax(pred, dim=-1).cpu().squeeze(0).item()
         # pred_im = np.ones_like(im_patch) * np.array(color_map[pred]).reshape(1,1,-1)
         # pred_im = torch.ones((size, size, 1)) * pred.cpu().reshape(1, 1, -1)    # -> HxWxC
-        preds_list.append(pred.cpu().numpy().squeeze(0))    # B=1 usually
+        preds_list.append(pred.cpu().squeeze(0).numpy())    # B=1 usually
     # print(num_h, num_w, h, w)
     
     pred = utils.combine(preds_list, num_h, num_w, h, w, size, step, len(color_map))
