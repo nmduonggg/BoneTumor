@@ -195,7 +195,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
             x_im0 = x_im0.reshape(B*L, C, H0, W0)
             x_im1 = x_im1.reshape(B*L, C, H1, W1)
         else:
-            L, C, H, W = x_im0.shape
+            L, C, H1, W1 = x_im1.shape
             B = 1
         
         
@@ -209,7 +209,7 @@ class UNI_lora_multimag_ISBI(nn.Module):
         y_im1s = torch.ones([x_im1.size(0), 1, x_im1.size(2), x_im1.size(3)]).to(device) * y_im1s.reshape(x_im1.size(0), -1, 1, 1)  # BxClxHxW
         
         if B>1:        
-            y_im1s = y_im1s.reshape(B, L, self.out_nc, H, W)
+            y_im1s = y_im1s.reshape(B, L, self.out_nc, H1, W1)
         y_im0 = utils.combine_batched_output(y_im1s, num_h1, num_w1, h1, w1, B, 128, 128, channel=self.out_nc)
         if B>1:
             y_im0 = y_im0.permute(0,2,3,1)
