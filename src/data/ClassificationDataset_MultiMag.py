@@ -65,8 +65,8 @@ class ClassificationDataset_MultiMag(Dataset):
             A.VerticalFlip(p=0.5),
             A.RandomRotate90(p=0.5),
             A.Transpose(p=0.5),
-            # A.RandomBrightnessContrast(p=0.1),
-            # A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
+            A.RandomBrightnessContrast(p=0.1),
+            A.ElasticTransform(p=0.5, alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
         ]
         )
         
@@ -78,6 +78,24 @@ class ClassificationDataset_MultiMag(Dataset):
             scale = 2 ** hat
             new_h, new_w = int(h // scale), int(w // scale)
             cropper = A.CenterCrop(width=new_w, height=new_h)
+            cropped = cropper(image=image, mask=mask)
+            image = cv2.resize(cropped['image'], (w, h))
+            mask = cv2.resize(cropped['mask'], (w, h), 
+                              interpolation=cv2.INTER_NEAREST)
+            
+            images.append(image)
+            masks.append(mask)
+        
+        return images, masks
+    
+    def center_crop(self, image, mask, h, w, scales):
+        image = image
+        images = [image]
+        masks = [mask]
+        for hat in scales[1:]:
+            scale = 2 ** hat
+            new_h, new_w = int(h // scale), int(w // scale)
+            cropper = A.RandomCrop(width=new_w, height=new_h)
             cropped = cropper(image=image, mask=mask)
             image = cv2.resize(cropped['image'], (w, h))
             mask = cv2.resize(cropped['mask'], (w, h), 
