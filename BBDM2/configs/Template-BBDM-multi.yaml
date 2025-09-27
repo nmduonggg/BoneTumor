@@ -18,7 +18,7 @@ data:
   dataset_name: 'PredIm-1-ysubx-concat-with9-discrete-multi'
   dataset_type: 'custom_aligned_refine_concat_discrete_vector'
   dataset_config:
-    dataset_path: '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2_multimag'
+    dataset_path: '/home/user01/aiotlab/nmduong/BoneTumor/RAW/REAL_WSIs/_DENOISE2_multimag_2'
     image_size: 64
     channels: 7
     to_normal: True
