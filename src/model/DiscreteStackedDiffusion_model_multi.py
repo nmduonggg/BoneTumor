@@ -93,6 +93,7 @@ class DiscreteStackedDiffusionModel_multi(nn.Module):
         
         # run phase 1
         original_preds, num_h, num_w, h, w = self._generate_patch_seq(x) 
+        
         out_ori = self._combine_tensor(
                         original_preds, num_h, num_w, h, w, self.patch_size, self.patch_size,
                         batch_size=batch_size, channel=7)   # B, H, W, C
@@ -231,10 +232,10 @@ class DiscreteStackedDiffusionModel_multi(nn.Module):
         
         outs = []
         img_tensor = torch.stack(img_list, dim=0)   # length_of_seq x B x CxHxW
-        length, B, C, H, W = img_tensor.shape
+        length, B, C, H, W = img_tensor.shape   #B=1
         img_tensor = img_tensor.reshape(length*B, C, H, W).to(x.device)
         
-        preds = self.phase1_classifier.hier_forward(img_tensor) 
+        preds = self.phase1_classifier.hier_infer(img_tensor) 
         preds = preds.reshape(length, B, -1, H, W)    # length_of_seq x B x C
         
         # preds = preds.reshape(list(preds.shape) + [1, 1]) * \

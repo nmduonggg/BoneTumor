@@ -163,6 +163,60 @@ class UNI_lora_multimag_ISBI(nn.Module):
         return y_im0
         
         
+    def hier_infer(self, im0):
+        """
+        im0 is original 5x numpy image without preprocessing
+        Todo:
+            - cut into 10x 20x
+            - preprocess each, forward
+        """
+        device = next(self.classifier1.parameters()).device
+        
+        
+        ### CROP IMAGES
+        ### So we need to padding here in order to ensure that the subimages at corner are processed properly.
+        
+        print("CKPT 1")
+        
+        im0 = self.transform(im0).float().unsqueeze(1)
+        x_im0 = torch.cat([im0 for _ in range(int((256 // 128)**2))], dim=1).to(device) # /2 for h and w
+        x_im0 = x_im0.squeeze(0)
+        print("CKPT 2")
+        im1s, num_h1, num_w1, h1, w1 = utils.crop_tensor(im0, crop_sz=128, step=128)
+        print("CKPT 3")
+        x_im1 = torch.stack(im1s, dim=1).to(device)
+        print(x_im0.shape, x_im1.shape)
+        x_im1 = x_im1.squeeze(0)
+        
+        if len(x_im0.shape) == 5:
+            B, L, C, H, W = im0.shape
+            x_im0 = x_im0.reshape(B*L, C, H, W)
+            x_im1 = x_im1.reshape(B*L, C, H, W)
+        else:
+            L, C, H, W = im0.shape
+            B = 1
+        
+        
+        y_im1s = self.forward(x_im0, x_im1, None)[0] # 4xC
+        print("CKPT 4")
+            # print(y_im2s)
+        
+        # print(len(y_im1s), y_im1s[0].shape)
+        # y_ims = torch.cat(y_im1s)
+            
+        y_im1s = torch.ones([x_im1.size(0), 1, x_im1.size(2), x_im1.size(3)]).to(device) * y_im1s.reshape(x_im1.size(0), -1, 1, 1)  # BxClxHxW
+        
+        if B>1:        
+            y_im1s = y_im1s.reshape(B, L, self.out_nc, H, W)
+        y_im0 = utils.combine_batched_output(y_im1s, num_h1, num_w1, h1, w1, B, 128, 128, channel=self.out_nc)
+        if B>1:
+            y_im0 = y_im0.permute(0,2,3,1)
+        else:
+            y_im0 = y_im0.permute(1,2,0)
+            
+        return y_im0
+        
+        
     def forward(self, x0, x1, scale=None):
         """
         return out of x2

@@ -394,9 +394,9 @@ if __name__=='__main__':
             metatdatas = json.load(f)
             print("Load metadatas from:", pred_dict_path)
     
-    for case in os.listdir(args.labels_dir):
+    for case in cases:
         if case in done_cases: continue
-        if case not in cases: continue
+        # if case not in cases: continue
         # if case != 'Case_10': continue
         
         print("="*5 + f"{case}" + "="*5)
